@@ -1,0 +1,14 @@
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\bin\Debug\net9.0\dti-window_alt.exe
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\bin\Debug\net9.0\dti-window_alt.deps.json
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\bin\Debug\net9.0\dti-window_alt.runtimeconfig.json
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\bin\Debug\net9.0\dti-window_alt.dll
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\bin\Debug\net9.0\dti-window_alt.pdb
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\dti-window_alt.GeneratedMSBuildEditorConfig.editorconfig
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\dti-window_alt.AssemblyInfoInputs.cache
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\dti-window_alt.AssemblyInfo.cs
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\dti-window_alt.csproj.CoreCompileInputs.cache
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\dti-window_alt.dll
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\refint\dti-window_alt.dll
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\dti-window_alt.pdb
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\dti-window_alt.genruntimeconfig.cache
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window_alt\obj\Debug\net9.0\ref\dti-window_alt.dll
