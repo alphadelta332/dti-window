@@ -1,8 +1,10 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Runtime.Versioning;
 using System.Windows.Forms;
+using System.IO;
 
 [SupportedOSPlatform("windows6.1")]
 public class AircraftViewer : Form
@@ -10,18 +12,39 @@ public class AircraftViewer : Form
     private Panel aircraftPanel;
     private BindingList<Aircraft> aircraftList;
     private Dictionary<Aircraft, List<Aircraft>> trafficPairings;
+    private Font terminusFont;
 
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
     {
         this.aircraftList = aircraftList;
         this.trafficPairings = trafficPairings;
 
+        // Calculate the correct path to the font
+        string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        string fontPath = Path.Combine(baseDirectory, @"..\..\fonts\Terminus.ttf");
+
+        // Use Path.GetFullPath to resolve the path correctly
+        fontPath = Path.GetFullPath(fontPath);
+
+        if (File.Exists(fontPath))
+        {
+            PrivateFontCollection privateFonts = new PrivateFontCollection();
+            privateFonts.AddFontFile(fontPath);
+            terminusFont = new Font(privateFonts.Families[0], 10); // Use the first loaded font family with size 10
+        }
+        else
+        {
+            // Fallback in case the font file is not found
+            terminusFont = new Font("Arial", 10);
+            MessageBox.Show($"Terminus font not found. Looking in: {fontPath}\nDefault font 'Arial' will be used.");
+        }
+
         this.aircraftList.ListChanged += AircraftList_ListChanged;
 
         this.Text = "Aircraft Viewer";
         this.Width = 600;
         this.Height = 500;
-        this.BackColor = Color.Gray; // Set background color
+        this.BackColor = Color.FromArgb(160, 170, 170); // Set background color to RGB(160, 170, 170)
 
         aircraftPanel = new Panel
         {
@@ -52,12 +75,12 @@ public class AircraftViewer : Form
 
         foreach (var aircraft in aircraftList)
         {
-            // Parent aircraft label
+            // Parent aircraft label with updated font and text color
             Label parentLabel = new Label
             {
                 Text = $"{aircraft.Name} ({aircraft.Callsign})",
-                Font = new Font("Arial", 12, FontStyle.Bold),
-                ForeColor = Color.White,
+                Font = terminusFont, // Apply Terminus font
+                ForeColor = Color.FromArgb(200, 255, 200), // Set parent text color to RGB(200, 255, 200)
                 Location = new Point(20, yOffset),
                 AutoSize = true
             };
@@ -70,8 +93,8 @@ public class AircraftViewer : Form
                 Label childLabel = new Label
                 {
                     Text = $"    {child.Name} ({child.Callsign}) - {child.Status}",
-                    Font = new Font("Arial", 10, FontStyle.Regular),
-                    ForeColor = Color.LightGray,
+                    Font = terminusFont, // Apply Terminus font
+                    ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255), // Set color based on status
                     Location = new Point(40, yOffset),
                     AutoSize = true
                 };
