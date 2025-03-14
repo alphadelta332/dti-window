@@ -75,10 +75,10 @@ public class AircraftViewer : Form
 
         foreach (var aircraft in aircraftList)
         {
-            // Parent aircraft label with updated font and text color
+            // Parent aircraft label with only the callsign displayed
             Label parentLabel = new Label
             {
-                Text = $"{aircraft.Name} ({aircraft.Callsign})",
+                Text = aircraft.Callsign, // Display only callsign
                 Font = terminusFont, // Apply Terminus font
                 ForeColor = Color.FromArgb(200, 255, 200), // Set parent text color to RGB(200, 255, 200)
                 Location = new Point(20, yOffset),
@@ -89,10 +89,10 @@ public class AircraftViewer : Form
 
             foreach (var child in aircraft.Children)
             {
-                // Child aircraft label
+                // Child aircraft label with only the callsign displayed
                 Label childLabel = new Label
                 {
-                    Text = $"    {child.Name} ({child.Callsign}) - {child.Status}",
+                    Text = child.Callsign, // Display only callsign
                     Font = terminusFont, // Apply Terminus font
                     ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255), // Set color based on status
                     Location = new Point(40, yOffset),
