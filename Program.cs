@@ -1,4 +1,12 @@
-﻿public class ChildAircraft
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Threading;
+using System.Windows.Forms;
+using System.Runtime.InteropServices;
+
+public class ChildAircraft
 {
     public string Name { get; set; }
     public string Callsign { get; set; }
@@ -6,7 +14,6 @@
 
     public ChildAircraft(string name, string callsign, string status)
     {
-        // Explicit null checks to ensure we don't pass null to non-nullable properties
         Name = name ?? throw new ArgumentNullException(nameof(name), "Child aircraft name cannot be null.");
         Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Child aircraft callsign cannot be null.");
         Status = status ?? throw new ArgumentNullException(nameof(status), "Child aircraft status cannot be null.");
@@ -17,14 +24,13 @@ public class Aircraft
 {
     public string Name { get; set; }
     public string Callsign { get; set; }
-    public List<ChildAircraft> Children { get; set; }
+    public BindingList<ChildAircraft> Children { get; set; }
 
     public Aircraft(string name, string callsign)
     {
-        // Explicit null checks to ensure we don't pass null to non-nullable properties
         Name = name ?? throw new ArgumentNullException(nameof(name), "Aircraft name cannot be null.");
         Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Aircraft callsign cannot be null.");
-        Children = new List<ChildAircraft>();
+        Children = new BindingList<ChildAircraft>();
     }
 
     public void AddChild(ChildAircraft child)
@@ -35,30 +41,56 @@ public class Aircraft
 
 public class Program
 {
+    private static AircraftViewer? aircraftViewer;
+
+    [STAThread]
     public static void Main()
     {
-        List<Aircraft> aircraftList = new List<Aircraft>();
+        // Attach a console window for debugging
+        AllocConsole();
 
+        BindingList<Aircraft> aircraftList = new BindingList<Aircraft>();
+        Dictionary<Aircraft, List<Aircraft>> trafficPairings = new Dictionary<Aircraft, List<Aircraft>>();
+
+        Thread viewerThread = new Thread(() =>
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            aircraftViewer = new AircraftViewer(aircraftList);
+            Application.Run(aircraftViewer);
+        });
+
+        viewerThread.SetApartmentState(ApartmentState.STA);
+        viewerThread.Start();
+
+        RunConsoleApp(aircraftList, trafficPairings);
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern bool AllocConsole();
+
+    private static void RunConsoleApp(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
+    {
         while (true)
         {
-            Console.WriteLine("1. Add Aircraft");
-            Console.WriteLine("2. Add Child to Aircraft");
-            Console.WriteLine("3. Display All Aircraft");
+            Console.WriteLine("\n1. Create Traffic Pairing");
+            Console.WriteLine("2. Display All Aircraft");
+            Console.WriteLine("3. View Traffic Pairings");
             Console.WriteLine("4. Exit");
             Console.Write("Choose an option: ");
             string choice = Console.ReadLine() ?? string.Empty;
 
             if (choice == "1")
             {
-                AddAircraft(aircraftList);
+                CreateTrafficPairing(aircraftList, trafficPairings);
             }
             else if (choice == "2")
             {
-                AddChildToAircraft(aircraftList);
+                DisplayAircraft(aircraftList);
             }
             else if (choice == "3")
             {
-                DisplayAircraft(aircraftList);
+                DisplayTrafficPairings(trafficPairings);
             }
             else if (choice == "4")
             {
@@ -71,100 +103,83 @@ public class Program
         }
     }
 
-    private static void AddAircraft(List<Aircraft> aircraftList)
+    private static void CreateTrafficPairing(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
     {
-        string name = string.Empty;
-        string callsign = string.Empty;
+        Console.Write("Enter First Aircraft Callsign: ");
+        string firstCallsign = Console.ReadLine() ?? string.Empty;
+        Aircraft firstAircraft = GetOrCreateAircraft(firstCallsign, aircraftList);
 
-        do
+        Console.Write("Enter Second Aircraft Callsign: ");
+        string secondCallsign = Console.ReadLine() ?? string.Empty;
+        Aircraft secondAircraft = GetOrCreateAircraft(secondCallsign, aircraftList);
+
+        // Add each aircraft as a child of the other
+        firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
+        secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
+
+        // Update the traffic pairings dictionary
+        if (!trafficPairings.ContainsKey(firstAircraft))
         {
-            Console.Write("Enter Aircraft Name: ");
-            name = Console.ReadLine() ?? string.Empty;
-        } while (string.IsNullOrEmpty(name));  // Ensure name is not empty or null
+            trafficPairings[firstAircraft] = new List<Aircraft>();
+        }
+        trafficPairings[firstAircraft].Add(secondAircraft);
 
-        do
+        if (!trafficPairings.ContainsKey(secondAircraft))
         {
-            Console.Write("Enter Aircraft Callsign: ");
-            callsign = Console.ReadLine() ?? string.Empty;
-        } while (string.IsNullOrEmpty(callsign));  // Ensure callsign is not empty or null
+            trafficPairings[secondAircraft] = new List<Aircraft>();
+        }
+        trafficPairings[secondAircraft].Add(firstAircraft);
 
-        // Create Aircraft and add to the list
-        Aircraft newAircraft = new Aircraft(name, callsign);
-        aircraftList.Add(newAircraft);
-
-        Console.WriteLine($"Aircraft {name} ({callsign}) added.");
+        // Refresh the UI after adding a traffic pairing
+        aircraftViewer?.Invoke((MethodInvoker)(() => aircraftViewer.PopulateAircraftDisplay()));
     }
 
-    private static void AddChildToAircraft(List<Aircraft> aircraftList)
+    private static Aircraft GetOrCreateAircraft(string callsign, BindingList<Aircraft> aircraftList)
     {
-        string parentName = string.Empty;
-        string childName = string.Empty;
-        string childCallsign = string.Empty;
-        string childStatus = string.Empty;
-
-        Console.Write("Enter Parent Aircraft Name: ");
-        parentName = Console.ReadLine() ?? string.Empty;
-
-        // Check if parentName is empty or null
-        if (string.IsNullOrEmpty(parentName))
+        // Check if aircraft already exists
+        var existingAircraft = aircraftList.FirstOrDefault(a => a.Callsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
+        if (existingAircraft != null)
         {
-            Console.WriteLine("Parent aircraft name cannot be empty.");
-            return;
+            return existingAircraft; // Return existing aircraft if found
         }
 
-        // Find the parent aircraft
-        Aircraft? parentAircraft = aircraftList.Find(a => a.Name.Equals(parentName, StringComparison.OrdinalIgnoreCase));
-
-        if (parentAircraft != null)
-        {
-            // Prompt for child details with null checks
-            do
-            {
-                Console.Write("Enter Child Aircraft Name: ");
-                childName = Console.ReadLine() ?? string.Empty;
-            } while (string.IsNullOrEmpty(childName));
-
-            do
-            {
-                Console.Write("Enter Child Aircraft Callsign: ");
-                childCallsign = Console.ReadLine() ?? string.Empty;
-            } while (string.IsNullOrEmpty(childCallsign));
-
-            do
-            {
-                Console.Write("Enter Child Aircraft Status (Passed/Unpassed): ");
-                childStatus = Console.ReadLine() ?? string.Empty;
-            } while (string.IsNullOrEmpty(childStatus) || (childStatus != "Passed" && childStatus != "Unpassed"));
-
-            // Creating child with validated values
-            ChildAircraft newChild = new ChildAircraft(childName, childCallsign, childStatus);
-            parentAircraft.AddChild(newChild);
-
-            Console.WriteLine($"Child {childName} ({childCallsign}) with status {childStatus} added to {parentAircraft.Name}.");
-        }
-        else
-        {
-            Console.WriteLine("Parent aircraft not found.");
-        }
+        // Otherwise, create a new aircraft
+        int newId = aircraftList.Count + 1; // Find the next available ID
+        string newName = $"Aircraft{newId}";
+        Aircraft newAircraft = new Aircraft(newName, callsign);
+        aircraftList.Add(newAircraft); // Add to the list of aircraft
+        return newAircraft; // Return the new aircraft
     }
 
-    private static void DisplayAircraft(List<Aircraft> aircraftList)
+    private static void DisplayAircraft(BindingList<Aircraft> aircraftList)
     {
-        if (aircraftList.Count == 0)
-        {
-            Console.WriteLine("No aircraft in the database.");
-            return;
-        }
-
-        // Display aircraft and their children
+        Console.WriteLine("\nAll Aircraft:");
         foreach (var aircraft in aircraftList)
         {
-            Console.WriteLine($"{aircraft.Name} ({aircraft.Callsign}) has the following children:");
+            Console.WriteLine($"{aircraft.Name} ({aircraft.Callsign})");
             foreach (var child in aircraft.Children)
             {
-                Console.WriteLine($"- {child.Name} ({child.Callsign}) - Status: {child.Status}");
+                Console.WriteLine($"    {child.Name} ({child.Callsign}) - {child.Status}");
             }
-            Console.WriteLine();
+        }
+    }
+
+    private static void DisplayTrafficPairings(Dictionary<Aircraft, List<Aircraft>> trafficPairings)
+    {
+        Console.WriteLine("\nTraffic Pairings:");
+        if (trafficPairings.Count == 0)
+        {
+            Console.WriteLine("No pairings exist.");
+            return;
+        }
+
+        foreach (var pair in trafficPairings)
+        {
+            Console.WriteLine($"{pair.Key.Callsign} is paired with:");
+            foreach (var target in pair.Value)
+            {
+                Console.WriteLine($"  - {target.Callsign}");
+            }
         }
     }
 }

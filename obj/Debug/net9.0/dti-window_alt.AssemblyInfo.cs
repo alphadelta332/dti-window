@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("dti-window_alt")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+feb82f70e1acddc786c72f44863958d71a0da1fa")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1784a31423bbd5a4d89b721f3a9736827a712538")]
 [assembly: System.Reflection.AssemblyProductAttribute("dti-window_alt")]
 [assembly: System.Reflection.AssemblyTitleAttribute("dti-window_alt")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

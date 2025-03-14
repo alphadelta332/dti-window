@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "HnJg9L59/xE=",
+  "dgSpecHash": "pTrrwtnqlok=",
   "success": true,
   "projectFilePath": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window_alt\\dti-window_alt.csproj",
   "expectedPackageFiles": [
@@ -63,7 +63,11 @@
     "C:\\Users\\Alex PC\\.nuget\\packages\\system.speech\\5.0.0\\system.speech.5.0.0.nupkg.sha512",
     "C:\\Users\\Alex PC\\.nuget\\packages\\system.text.encoding.codepages\\5.0.0\\system.text.encoding.codepages.5.0.0.nupkg.sha512",
     "C:\\Users\\Alex PC\\.nuget\\packages\\system.threading.accesscontrol\\5.0.0\\system.threading.accesscontrol.5.0.0.nupkg.sha512",
-    "C:\\Users\\Alex PC\\.nuget\\packages\\system.windows.extensions\\5.0.0\\system.windows.extensions.5.0.0.nupkg.sha512"
+    "C:\\Users\\Alex PC\\.nuget\\packages\\system.windows.extensions\\5.0.0\\system.windows.extensions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Alex PC\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.13\\microsoft.netcore.app.ref.8.0.13.nupkg.sha512",
+    "C:\\Users\\Alex PC\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.13\\microsoft.windowsdesktop.app.ref.8.0.13.nupkg.sha512",
+    "C:\\Users\\Alex PC\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.13\\microsoft.aspnetcore.app.ref.8.0.13.nupkg.sha512",
+    "C:\\Users\\Alex PC\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.13\\microsoft.netcore.app.host.win-x64.8.0.13.nupkg.sha512"
   ],
   "logs": []
 }
