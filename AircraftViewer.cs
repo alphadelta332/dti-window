@@ -9,10 +9,13 @@ public class AircraftViewer : Form
 {
     private Panel aircraftPanel;
     private BindingList<Aircraft> aircraftList;
+    private Dictionary<Aircraft, List<Aircraft>> trafficPairings;
 
-    public AircraftViewer(BindingList<Aircraft> aircraftList)
+    public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
     {
         this.aircraftList = aircraftList;
+        this.trafficPairings = trafficPairings;
+
         this.aircraftList.ListChanged += AircraftList_ListChanged;
 
         this.Text = "Aircraft Viewer";
@@ -42,7 +45,6 @@ public class AircraftViewer : Form
         }
     }
 
-    // Changed to 'public' to allow access from Program.cs
     public void PopulateAircraftDisplay()
     {
         aircraftPanel.Controls.Clear(); // Clear previous UI elements
@@ -85,26 +87,24 @@ public class AircraftViewer : Form
         }
     }
 
-    // Handle mouse down events on child labels
     private void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parentAircraft, ChildAircraft child)
     {
-        if (sender is Label childLabel) // Ensure sender is a label
+        if (sender is Label childLabel)
         {
-            if (e.Button == MouseButtons.Left) // Left-click
+            if (e.Button == MouseButtons.Left)
             {
                 child.Status = "Passed";
             }
-            else if (e.Button == MouseButtons.Right) // Right-click
+            else if (e.Button == MouseButtons.Right)
             {
                 child.Status = "Unpassed";
             }
-            else if (e.Button == MouseButtons.Middle) // Middle-click
+            else if (e.Button == MouseButtons.Middle)
             {
-                // Remove the child from the parent's list of children
                 parentAircraft.Children.Remove(child);
             }
 
-            // Refresh the UI immediately after status change or deletion
+            // Refresh the UI after status change or deletion
             PopulateAircraftDisplay(); // Refresh UI
         }
     }

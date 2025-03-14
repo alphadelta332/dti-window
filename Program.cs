@@ -35,7 +35,11 @@ public class Aircraft
 
     public void AddChild(ChildAircraft child)
     {
-        Children.Add(child);
+        // Check if the child already exists
+        if (!Children.Any(c => c.Callsign == child.Callsign))
+        {
+            Children.Add(child);
+        }
     }
 }
 
@@ -56,7 +60,7 @@ public class Program
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            aircraftViewer = new AircraftViewer(aircraftList);
+            aircraftViewer = new AircraftViewer(aircraftList, trafficPairings);  // Pass trafficPairings to the viewer
             Application.Run(aircraftViewer);
         });
 
@@ -113,22 +117,30 @@ public class Program
         string secondCallsign = Console.ReadLine() ?? string.Empty;
         Aircraft secondAircraft = GetOrCreateAircraft(secondCallsign, aircraftList);
 
-        // Add each aircraft as a child of the other
+        // Add each aircraft as a child of the other if not already added
         firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
         secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
 
-        // Update the traffic pairings dictionary
+        // Update the traffic pairings dictionary, ensuring no duplicates
         if (!trafficPairings.ContainsKey(firstAircraft))
         {
             trafficPairings[firstAircraft] = new List<Aircraft>();
         }
-        trafficPairings[firstAircraft].Add(secondAircraft);
+
+        if (!trafficPairings[firstAircraft].Contains(secondAircraft))
+        {
+            trafficPairings[firstAircraft].Add(secondAircraft);
+        }
 
         if (!trafficPairings.ContainsKey(secondAircraft))
         {
             trafficPairings[secondAircraft] = new List<Aircraft>();
         }
-        trafficPairings[secondAircraft].Add(firstAircraft);
+
+        if (!trafficPairings[secondAircraft].Contains(firstAircraft))
+        {
+            trafficPairings[secondAircraft].Add(firstAircraft);
+        }
 
         // Refresh the UI after adding a traffic pairing
         aircraftViewer?.Invoke((MethodInvoker)(() => aircraftViewer.PopulateAircraftDisplay()));
