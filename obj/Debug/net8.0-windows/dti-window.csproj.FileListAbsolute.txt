@@ -53,7 +53,7 @@ D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-win
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-window.GeneratedMSBuildEditorConfig.editorconfig
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-window.csproj.CoreCompileInputs.cache
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-window.sourcelink.json
-D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-wind.01B42EE2.Up2Date
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-window.csproj.Up2Date
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-window.dll
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\refint\dti-window.dll
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-window.pdb

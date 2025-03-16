@@ -3203,9 +3203,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\dti-window_alt.csproj",
-      "projectName": "dti-window_alt",
-      "projectPath": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\dti-window_alt.csproj",
+      "projectUniqueName": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\dti-window.csproj",
+      "projectName": "dti-window",
+      "projectPath": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\dti-window.csproj",
       "packagesPath": "C:\\Users\\Alex PC\\.nuget\\packages\\",
       "outputPath": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\obj\\",
       "projectStyle": "PackageReference",
