@@ -59,3 +59,7 @@ D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\refint\
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-window.pdb
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\dti-window.genruntimeconfig.cache
 D:\Alex PC\OneDrive\Documents\GitHub\dti-window\obj\Debug\net8.0-windows\ref\dti-window.dll
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window\bin\Debug\net8.0-windows\Microsoft.Win32.SystemEvents.dll
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window\bin\Debug\net8.0-windows\System.Drawing.Common.dll
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window\bin\Debug\net8.0-windows\System.Private.Windows.Core.dll
+D:\Alex PC\OneDrive\Documents\GitHub\dti-window\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\Microsoft.Win32.SystemEvents.dll

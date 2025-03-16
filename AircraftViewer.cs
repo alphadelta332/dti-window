@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.Drawing.Text;
+using System.Drawing.Text; // Add this for PrivateFontCollection
 using System.Runtime.Versioning;
 using System.Windows.Forms;
 using System.IO;
@@ -30,7 +30,7 @@ public class AircraftViewer : Form
         {
             PrivateFontCollection privateFonts = new PrivateFontCollection();
             privateFonts.AddFontFile(fontPath);
-            terminusFont = new Font(privateFonts.Families[0], 12); // Increase font size to 12
+            terminusFont = new Font(privateFonts.Families[0], 12, FontStyle.Regular); // Correct FontStyle usage
         }
         else
         {
@@ -81,10 +81,31 @@ public class AircraftViewer : Form
                 Text = aircraft.Callsign, // Display only callsign
                 Font = terminusFont, // Apply Terminus font
                 ForeColor = Color.FromArgb(200, 255, 200), // Set parent text color to RGB(200, 255, 200)
-                Location = new Point(20, yOffset),
+                Location = new Point(30, yOffset), // Move parent label further right (increase X by 50 to align with box)
                 AutoSize = true
             };
             aircraftPanel.Controls.Add(parentLabel);
+
+            // Create and add a Panel as the box next to the parent label
+            Panel boxPanel = new Panel
+            {
+                Size = new Size(14, 14), // Make the box smaller (e.g., 15x15)
+                Location = new Point(parentLabel.Location.X - 20, parentLabel.Location.Y), // Move box even further right (increase X by 50)
+                BorderStyle = BorderStyle.None
+            };
+
+            boxPanel.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (Pen pen = new Pen(Color.White, 5)) // Thicker outline (pen width 4)
+                {
+                    e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
+                }
+            };
+
+            // Add the boxPanel to the form
+            aircraftPanel.Controls.Add(boxPanel);
+
             yOffset += 25; // Reduced space between parent and first child
 
             foreach (var child in aircraft.Children)
@@ -95,7 +116,7 @@ public class AircraftViewer : Form
                     Text = child.Callsign, // Display only callsign
                     Font = terminusFont, // Apply Terminus font
                     ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255), // Set color based on status
-                    Location = new Point(60, yOffset), // Doubled indent size for children
+                    Location = new Point(65, yOffset), // Doubled indent size for children
                     AutoSize = true
                 };
 
