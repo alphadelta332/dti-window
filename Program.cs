@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
+[SupportedOSPlatform("windows6.1")]
 public class ChildAircraft
 {
     public string Name { get; set; }
@@ -20,6 +22,7 @@ public class ChildAircraft
     }
 }
 
+[SupportedOSPlatform("windows6.1")]
 public class Aircraft
 {
     public string Name { get; set; }
@@ -35,7 +38,6 @@ public class Aircraft
 
     public void AddChild(ChildAircraft child)
     {
-        // Check if the child already exists
         if (!Children.Any(c => c.Callsign == child.Callsign))
         {
             Children.Add(child);
@@ -43,6 +45,7 @@ public class Aircraft
     }
 }
 
+[SupportedOSPlatform("windows6.1")]
 public class Program
 {
     private static AircraftViewer? aircraftViewer;
@@ -50,7 +53,6 @@ public class Program
     [STAThread]
     public static void Main()
     {
-        // Attach a console window for debugging
         AllocConsole();
 
         BindingList<Aircraft> aircraftList = new BindingList<Aircraft>();
@@ -60,7 +62,7 @@ public class Program
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            aircraftViewer = new AircraftViewer(aircraftList, trafficPairings);  // Pass trafficPairings to the viewer
+            aircraftViewer = new AircraftViewer(aircraftList, trafficPairings);
             Application.Run(aircraftViewer);
         });
 
@@ -117,11 +119,9 @@ public class Program
         string secondCallsign = Console.ReadLine() ?? string.Empty;
         Aircraft secondAircraft = GetOrCreateAircraft(secondCallsign, aircraftList);
 
-        // Add each aircraft as a child of the other if not already added
         firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
         secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
 
-        // Update the traffic pairings dictionary, ensuring no duplicates
         if (!trafficPairings.ContainsKey(firstAircraft))
         {
             trafficPairings[firstAircraft] = new List<Aircraft>();
@@ -142,25 +142,25 @@ public class Program
             trafficPairings[secondAircraft].Add(firstAircraft);
         }
 
-        // Refresh the UI after adding a traffic pairing
-        aircraftViewer?.Invoke((MethodInvoker)(() => aircraftViewer.PopulateAircraftDisplay()));
+        if (OperatingSystem.IsWindowsVersionAtLeast(6, 1))
+        {
+            aircraftViewer?.Invoke((MethodInvoker)(() => aircraftViewer.PopulateAircraftDisplay()));
+        }
     }
 
     private static Aircraft GetOrCreateAircraft(string callsign, BindingList<Aircraft> aircraftList)
     {
-        // Check if aircraft already exists
         var existingAircraft = aircraftList.FirstOrDefault(a => a.Callsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
         if (existingAircraft != null)
         {
-            return existingAircraft; // Return existing aircraft if found
+            return existingAircraft;
         }
 
-        // Otherwise, create a new aircraft
-        int newId = aircraftList.Count + 1; // Find the next available ID
+        int newId = aircraftList.Count + 1;
         string newName = $"Aircraft{newId}";
         Aircraft newAircraft = new Aircraft(newName, callsign);
-        aircraftList.Add(newAircraft); // Add to the list of aircraft
-        return newAircraft; // Return the new aircraft
+        aircraftList.Add(newAircraft);
+        return newAircraft;
     }
 
     private static void DisplayAircraft(BindingList<Aircraft> aircraftList)

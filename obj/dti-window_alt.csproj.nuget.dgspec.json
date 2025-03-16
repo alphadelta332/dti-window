@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window_alt\\dti-window_alt.csproj": {}
+    "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\dti-window_alt.csproj": {}
   },
   "projects": {
-    "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window_alt\\dti-window_alt.csproj": {
+    "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\dti-window_alt.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window_alt\\dti-window_alt.csproj",
+        "projectUniqueName": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\dti-window_alt.csproj",
         "projectName": "dti-window_alt",
-        "projectPath": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window_alt\\dti-window_alt.csproj",
+        "projectPath": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\dti-window_alt.csproj",
         "packagesPath": "C:\\Users\\Alex PC\\.nuget\\packages\\",
-        "outputPath": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window_alt\\obj\\",
+        "outputPath": "D:\\Alex PC\\OneDrive\\Documents\\GitHub\\dti-window\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

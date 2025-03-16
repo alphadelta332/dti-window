@@ -68,6 +68,7 @@ public class AircraftViewer : Form
         }
     }
 
+    [SupportedOSPlatform("windows6.1")]
     public void PopulateAircraftDisplay()
     {
         aircraftPanel.Controls.Clear(); // Clear previous UI elements
