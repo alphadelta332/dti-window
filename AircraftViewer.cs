@@ -5,6 +5,7 @@ using System.Drawing.Text; // Add this for PrivateFontCollection
 using System.Runtime.Versioning;
 using System.Windows.Forms;
 using System.IO;
+using System.Linq; // Add for LINQ methods like FirstOrDefault
 
 [SupportedOSPlatform("windows6.1")]
 public class AircraftViewer : Form
@@ -13,6 +14,7 @@ public class AircraftViewer : Form
     private BindingList<Aircraft> aircraftList;
     private Dictionary<Aircraft, List<Aircraft>> trafficPairings;
     private Font terminusFont;
+    private Aircraft? designatedAircraft = null; // To hold the currently designated aircraft
 
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
     {
@@ -73,6 +75,48 @@ public class AircraftViewer : Form
         aircraftPanel.Controls.Clear(); // Clear previous UI elements
         int yOffset = 10; // Vertical spacing
 
+        // Static aircraft list at the top
+        string[] staticAircraft = { "QFA123", "VOZ456", "JST789" };
+
+        foreach (string callsign in staticAircraft)
+        {
+            Label fixedAircraftLabel = new Label
+            {
+                Text = callsign, // Display only callsign
+                Font = terminusFont, // Apply Terminus font
+                ForeColor = Color.FromArgb(200, 255, 200), // Set color for fixed aircraft
+                Location = new Point(30, yOffset),
+                AutoSize = true
+            };
+            fixedAircraftLabel.MouseDown += (sender, e) => FixedAircraftLabel_MouseDown(sender, e, callsign);
+
+            // Add border around designated aircraft
+            if (designatedAircraft != null && designatedAircraft.Callsign == callsign)
+            {
+                fixedAircraftLabel.BorderStyle = BorderStyle.FixedSingle;
+                fixedAircraftLabel.BackColor = Color.LightBlue; // Highlight designated aircraft with a background color
+            }
+            else
+            {
+                fixedAircraftLabel.BackColor = Color.Transparent; // No background for non-designated aircraft
+                fixedAircraftLabel.BorderStyle = BorderStyle.None; // No border for non-designated aircraft
+            }
+
+            aircraftPanel.Controls.Add(fixedAircraftLabel);
+            yOffset += 25; // Space between static aircraft
+        }
+
+        // Horizontal line separator
+        Panel separator = new Panel
+        {
+            Size = new Size(aircraftPanel.Width, 2),
+            Location = new Point(0, yOffset),
+            BackColor = Color.Gray
+        };
+        aircraftPanel.Controls.Add(separator);
+
+        yOffset += 10; // Adjust yOffset after separator
+
         foreach (var aircraft in aircraftList)
         {
             // Parent aircraft label with only the callsign displayed
@@ -131,6 +175,28 @@ public class AircraftViewer : Form
         }
     }
 
+    private void FixedAircraftLabel_MouseDown(object? sender, MouseEventArgs e, string callsign)
+    {
+        if (sender is Label fixedAircraftLabel && e.Button == MouseButtons.Left)
+        {
+            // Find the aircraft from the list by callsign
+            Aircraft? clickedAircraft = aircraftList.FirstOrDefault(a => a.Callsign == callsign);
+            if (clickedAircraft != null)
+            {
+                // If there is a designated aircraft, remove its box
+                if (designatedAircraft != null)
+                {
+                    // Refresh the previous designated aircraft's box to remove the border
+                    RefreshAircraftBox(designatedAircraft);
+                }
+
+                // Designate the clicked aircraft
+                designatedAircraft = clickedAircraft;
+                RefreshAircraftBox(designatedAircraft); // Add the box around the designated aircraft
+            }
+        }
+    }
+
     private void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parentAircraft, ChildAircraft child)
     {
         if (sender is Label childLabel)
@@ -157,5 +223,11 @@ public class AircraftViewer : Form
             // Refresh the UI after status change or deletion
             PopulateAircraftDisplay(); // Refresh UI
         }
+    }
+
+    private void RefreshAircraftBox(Aircraft aircraft)
+    {
+        // This method will refresh the box (border) around the designated aircraft
+        PopulateAircraftDisplay(); // Re-populate the UI to reflect the changes
     }
 }
