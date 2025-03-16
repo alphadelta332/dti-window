@@ -68,7 +68,6 @@ public class AircraftViewer : Form
         }
     }
 
-    [SupportedOSPlatform("windows6.1")]
     public void PopulateAircraftDisplay()
     {
         aircraftPanel.Controls.Clear(); // Clear previous UI elements
@@ -126,6 +125,12 @@ public class AircraftViewer : Form
             else if (e.Button == MouseButtons.Middle)
             {
                 parentAircraft.Children.Remove(child);
+
+                // Check if the parent has any remaining children. If not, remove the parent from the list
+                if (parentAircraft.Children.Count == 0)
+                {
+                    aircraftList.Remove(parentAircraft);
+                }
             }
 
             // Refresh the UI after status change or deletion

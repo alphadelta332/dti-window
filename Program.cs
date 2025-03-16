@@ -43,12 +43,18 @@ public class Aircraft
             Children.Add(child);
         }
     }
+
+    public bool HasReferences()
+    {
+        return Children.Count > 0;
+    }
 }
 
 [SupportedOSPlatform("windows6.1")]
 public class Program
 {
     private static AircraftViewer? aircraftViewer;
+    private static int nextAircraftNumber = 1;
 
     [STAThread]
     public static void Main()
@@ -119,9 +125,11 @@ public class Program
         string secondCallsign = Console.ReadLine() ?? string.Empty;
         Aircraft secondAircraft = GetOrCreateAircraft(secondCallsign, aircraftList);
 
+        // Add children relationships
         firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
         secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
 
+        // Add to traffic pairings
         if (!trafficPairings.ContainsKey(firstAircraft))
         {
             trafficPairings[firstAircraft] = new List<Aircraft>();
@@ -142,10 +150,8 @@ public class Program
             trafficPairings[secondAircraft].Add(firstAircraft);
         }
 
-        if (OperatingSystem.IsWindowsVersionAtLeast(6, 1))
-        {
-            aircraftViewer?.Invoke((MethodInvoker)(() => aircraftViewer.PopulateAircraftDisplay()));
-        }
+        // Update UI
+        aircraftViewer?.Invoke((MethodInvoker)(() => aircraftViewer.PopulateAircraftDisplay()));
     }
 
     private static Aircraft GetOrCreateAircraft(string callsign, BindingList<Aircraft> aircraftList)
@@ -153,44 +159,57 @@ public class Program
         var existingAircraft = aircraftList.FirstOrDefault(a => a.Callsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
         if (existingAircraft != null)
         {
+            Console.WriteLine($"Found existing aircraft with callsign {callsign}. Using Aircraft: {existingAircraft.Name}");
             return existingAircraft;
         }
 
-        int newId = aircraftList.Count + 1;
+        int newId = nextAircraftNumber;
         string newName = $"Aircraft{newId}";
-        Aircraft newAircraft = new Aircraft(newName, callsign);
+        Console.WriteLine($"Creating new aircraft with ID: {newId}, Name: {newName}, Callsign: {callsign}");
+
+        var newAircraft = new Aircraft(newName, callsign);
         aircraftList.Add(newAircraft);
+        nextAircraftNumber++;
+
         return newAircraft;
     }
 
     private static void DisplayAircraft(BindingList<Aircraft> aircraftList)
     {
-        Console.WriteLine("\nAll Aircraft:");
-        foreach (var aircraft in aircraftList)
+        if (aircraftList.Count == 0)
         {
-            Console.WriteLine($"{aircraft.Name} ({aircraft.Callsign})");
-            foreach (var child in aircraft.Children)
+            Console.WriteLine("No aircraft available.");
+        }
+        else
+        {
+            Console.WriteLine("Aircraft List:");
+            foreach (var aircraft in aircraftList)
             {
-                Console.WriteLine($"    {child.Name} ({child.Callsign}) - {child.Status}");
+                Console.WriteLine($"Name: {aircraft.Name}, Callsign: {aircraft.Callsign}");
+                foreach (var child in aircraft.Children)
+                {
+                    Console.WriteLine($"  Child Callsign: {child.Callsign}, Status: {child.Status}");
+                }
             }
         }
     }
 
     private static void DisplayTrafficPairings(Dictionary<Aircraft, List<Aircraft>> trafficPairings)
     {
-        Console.WriteLine("\nTraffic Pairings:");
         if (trafficPairings.Count == 0)
         {
-            Console.WriteLine("No pairings exist.");
-            return;
+            Console.WriteLine("No traffic pairings available.");
         }
-
-        foreach (var pair in trafficPairings)
+        else
         {
-            Console.WriteLine($"{pair.Key.Callsign} is paired with:");
-            foreach (var target in pair.Value)
+            Console.WriteLine("Traffic Pairings:");
+            foreach (var pairing in trafficPairings)
             {
-                Console.WriteLine($"  - {target.Callsign}");
+                Console.WriteLine($"{pairing.Key.Callsign} has pairings with:");
+                foreach (var aircraft in pairing.Value)
+                {
+                    Console.WriteLine($"  - {aircraft.Callsign}");
+                }
             }
         }
     }
