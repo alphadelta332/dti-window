@@ -30,20 +30,20 @@ public class AircraftViewer : Form
         {
             PrivateFontCollection privateFonts = new PrivateFontCollection();
             privateFonts.AddFontFile(fontPath);
-            terminusFont = new Font(privateFonts.Families[0], 10); // Use the first loaded font family with size 10
+            terminusFont = new Font(privateFonts.Families[0], 12); // Increase font size to 12
         }
         else
         {
             // Fallback in case the font file is not found
-            terminusFont = new Font("Arial", 10);
+            terminusFont = new Font("Arial", 12); // Use 12 as the font size for fallback
             MessageBox.Show($"Terminus font not found. Looking in: {fontPath}\nDefault font 'Arial' will be used.");
         }
 
         this.aircraftList.ListChanged += AircraftList_ListChanged;
 
-        this.Text = "Aircraft Viewer";
-        this.Width = 600;
-        this.Height = 500;
+        this.Text = "DTI Window";
+        this.Width = 200;
+        this.Height = 350; // Slightly increased height for better spacing
         this.BackColor = Color.FromArgb(160, 170, 170); // Set background color to RGB(160, 170, 170)
 
         aircraftPanel = new Panel
@@ -85,7 +85,7 @@ public class AircraftViewer : Form
                 AutoSize = true
             };
             aircraftPanel.Controls.Add(parentLabel);
-            yOffset += 30; // Space between parent and first child
+            yOffset += 25; // Reduced space between parent and first child
 
             foreach (var child in aircraft.Children)
             {
@@ -95,7 +95,7 @@ public class AircraftViewer : Form
                     Text = child.Callsign, // Display only callsign
                     Font = terminusFont, // Apply Terminus font
                     ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255), // Set color based on status
-                    Location = new Point(40, yOffset),
+                    Location = new Point(60, yOffset), // Doubled indent size for children
                     AutoSize = true
                 };
 
@@ -103,7 +103,7 @@ public class AircraftViewer : Form
                 childLabel.MouseDown += (sender, e) => ChildLabel_MouseDown(sender, e, aircraft, child);
 
                 aircraftPanel.Controls.Add(childLabel);
-                yOffset += 25; // Space between children
+                yOffset += 20; // Reduced space between children
             }
 
             yOffset += 10; // Extra space before the next parent aircraft
