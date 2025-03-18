@@ -80,9 +80,6 @@ public class AircraftViewer : Form
     // Populates the aircraft display with UI elements
     public void PopulateAircraftDisplay()
     {
-        // Debug message to indicate when the method is triggered
-        Console.WriteLine("PopulateAircraftDisplay triggered!");
-
         aircraftPanel.Controls.Clear(); // Clear previous elements
         int yOffset = 10; // Y-positioning for elements
 
@@ -109,6 +106,79 @@ public class AircraftViewer : Form
             aircraftPanel.Controls.Add(fixedAircraftLabel);
             yOffset += 25; // Move the next label down
         }
+
+        // Add a separator
+        Panel separator = new Panel
+        {
+            Size = new Size(aircraftPanel.Width, 2),
+            Location = new Point(0, yOffset),
+            BackColor = Color.Gray
+        };
+        aircraftPanel.Controls.Add(separator);
+        yOffset += 10;
+
+        // Display traffic pairings
+        foreach (var aircraft in aircraftList)
+        {
+            Label parentLabel = new Label
+            {
+                Text = aircraft.Callsign,
+                Font = terminusFont,
+                ForeColor = Color.FromArgb(200, 255, 200),
+                Location = new Point(30, yOffset),
+                AutoSize = true
+            };
+            aircraftPanel.Controls.Add(parentLabel);
+
+            // Panel for the white square to indicate designation status
+            Panel boxPanel = new Panel
+            {
+                Size = new Size(16, 16),
+                Location = new Point(parentLabel.Location.X - 20, parentLabel.Location.Y),
+                BorderStyle = BorderStyle.None
+            };
+
+            boxPanel.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (Pen pen = new Pen(Color.White, 4))
+                {
+                    e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
+                }
+
+                // Fill the box white if the aircraft is designated
+                if (designatedAircraft != null && designatedAircraft.Callsign == aircraft.Callsign)
+                {
+                    using (Brush brush = new SolidBrush(Color.White))
+                    {
+                        e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
+                    }
+                }
+            };
+
+            aircraftPanel.Controls.Add(boxPanel);
+
+            yOffset += 25;
+
+            foreach (var child in aircraft.Children)
+            {
+                Label childLabel = new Label
+                {
+                    Text = child.Callsign,
+                    Font = terminusFont,
+                    ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255),
+                    Location = new Point(80, yOffset),
+                    AutoSize = true
+                };
+
+                childLabel.MouseDown += (sender, e) => ChildLabel_MouseDown(sender, e, aircraft, child);
+
+                aircraftPanel.Controls.Add(childLabel);
+                yOffset += 20;
+            }
+
+            yOffset += 10;
+        }
     }
 
     // Handles clicks on fixed aircraft labels (sets designation)
@@ -116,10 +186,8 @@ public class AircraftViewer : Form
     {
         if (sender is Label fixedAircraftLabel && e.Button == MouseButtons.Left)
         {
-            // Get or create the aircraft and set it as designated
-            Aircraft designated = GetOrCreateAircraft(callsign);
-            designatedAircraft = designated;
-            PopulateAircraftDisplay(); // Refresh UI to reflect selection
+            // Set the designated aircraft callsign
+            designatedAircraft = new Aircraft($"Aircraft{nextAircraftNumber++}", callsign);
         }
     }
 
@@ -134,6 +202,15 @@ public class AircraftViewer : Form
 
             // Create a traffic pairing
             CreateTrafficPairing(designatedAircraft, hoveredAircraft);
+
+            // Add the designated aircraft to the list if it doesn't already exist
+            if (!aircraftList.Contains(designatedAircraft))
+            {
+                aircraftList.Add(designatedAircraft);
+            }
+
+            // Refresh UI to reflect the pairing
+            PopulateAircraftDisplay();
         }
     }
 
@@ -178,5 +255,22 @@ public class AircraftViewer : Form
 
         Console.WriteLine($"Traffic pairing created between {firstAircraft.Callsign} and {secondAircraft.Callsign}");
         PopulateAircraftDisplay(); // Refresh UI to reflect the pairing
+    }
+
+    // Handles clicks on child aircraft labels
+    private void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
+    {
+        if (e.Button == MouseButtons.Left)
+        {
+            // Toggle the status between "Passed" and "Unpassed"
+            child.Status = child.Status == "Passed" ? "Unpassed" : "Passed";
+        }
+        else if (e.Button == MouseButtons.Right)
+        {
+            // Set the status to "Unpassed"
+            child.Status = "Unpassed";
+        }
+
+        PopulateAircraftDisplay(); // Refresh UI to reflect the change
     }
 }
