@@ -197,14 +197,11 @@ public class AircraftViewer : Form
         }
     }
 
-    // Handles clicks on fixed aircraft labels (sets designation and selection)
+    // Handles clicks on fixed aircraft labels (sets selection for the box)
     private void FixedAircraftLabel_MouseDown(object? sender, MouseEventArgs e, string callsign)
     {
         if (sender is Label fixedAircraftLabel && e.Button == MouseButtons.Left)
         {
-            // Set the designated aircraft using GetOrCreateAircraft
-            designatedAircraft = GetOrCreateAircraft(callsign);
-            
             // Set the selected callsign for the box
             selectedCallsign = callsign;
             PopulateAircraftDisplay(); // Refresh UI to reflect the selection
@@ -220,7 +217,7 @@ public class AircraftViewer : Form
             // Ensure the hovered aircraft exists in the list
             Aircraft hoveredAircraft = GetOrCreateAircraft(hoveredCallsign);
 
-            // Set the designated aircraft
+            // Create the designated aircraft if it doesn't already exist
             designatedAircraft = GetOrCreateAircraft(selectedCallsign);
 
             // Create a traffic pairing
