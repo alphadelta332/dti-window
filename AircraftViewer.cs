@@ -17,6 +17,7 @@ public class AircraftViewer : Form
     private Aircraft? designatedAircraft = null; // Currently designated aircraft
     private string? hoveredCallsign = null; // Callsign of aircraft currently hovered over
     private static int nextAircraftNumber = 1; // Used to generate unique aircraft names
+    private string? selectedCallsign = null; // Currently selected callsign for the box
 
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
     {
@@ -104,6 +105,21 @@ public class AircraftViewer : Form
             fixedAircraftLabel.MouseLeave += (sender, e) => hoveredCallsign = null;
 
             aircraftPanel.Controls.Add(fixedAircraftLabel);
+
+            // Draw a rectangle around the selected callsign's label
+            if (selectedCallsign != null && selectedCallsign == callsign)
+            {
+                fixedAircraftLabel.Paint += (s, e) =>
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    using (Pen pen = new Pen(Color.White, 2))
+                    {
+                        e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, fixedAircraftLabel.Width - 1, fixedAircraftLabel.Height - 1));
+                    }
+                };
+                fixedAircraftLabel.Invalidate(); // Force the label to repaint
+            }
+
             yOffset += 25; // Move the next label down
         }
 
@@ -181,13 +197,17 @@ public class AircraftViewer : Form
         }
     }
 
-    // Handles clicks on fixed aircraft labels (sets designation)
+    // Handles clicks on fixed aircraft labels (sets designation and selection)
     private void FixedAircraftLabel_MouseDown(object? sender, MouseEventArgs e, string callsign)
     {
         if (sender is Label fixedAircraftLabel && e.Button == MouseButtons.Left)
         {
-            // Set the designated aircraft callsign
-            designatedAircraft = new Aircraft($"Aircraft{nextAircraftNumber++}", callsign);
+            // Set the designated aircraft using GetOrCreateAircraft
+            designatedAircraft = GetOrCreateAircraft(callsign);
+            
+            // Set the selected callsign for the box
+            selectedCallsign = callsign;
+            PopulateAircraftDisplay(); // Refresh UI to reflect the selection
         }
     }
 
@@ -195,19 +215,16 @@ public class AircraftViewer : Form
     private void AircraftViewer_KeyDown(object? sender, KeyEventArgs e)
     {
         // Ensure we have both a designated and hovered aircraft before creating a pairing
-        if (e.KeyCode == Keys.F7 && designatedAircraft != null && hoveredCallsign != null)
+        if (e.KeyCode == Keys.F7 && selectedCallsign != null && hoveredCallsign != null)
         {
             // Ensure the hovered aircraft exists in the list
             Aircraft hoveredAircraft = GetOrCreateAircraft(hoveredCallsign);
 
+            // Set the designated aircraft
+            designatedAircraft = GetOrCreateAircraft(selectedCallsign);
+
             // Create a traffic pairing
             CreateTrafficPairing(designatedAircraft, hoveredAircraft);
-
-            // Add the designated aircraft to the list if it doesn't already exist
-            if (!aircraftList.Contains(designatedAircraft))
-            {
-                aircraftList.Add(designatedAircraft);
-            }
 
             // Refresh UI to reflect the pairing
             PopulateAircraftDisplay();
@@ -269,6 +286,17 @@ public class AircraftViewer : Form
         {
             // Set the status to "Unpassed"
             child.Status = "Unpassed";
+        }
+        else if (e.Button == MouseButtons.Middle)
+        {
+            // Remove the child from the parent's children list
+            parent.Children.Remove(child);
+
+            // If the parent has no more children, remove the parent from the aircraft list
+            if (parent.Children.Count == 0)
+            {
+                aircraftList.Remove(parent);
+            }
         }
 
         PopulateAircraftDisplay(); // Refresh UI to reflect the change
