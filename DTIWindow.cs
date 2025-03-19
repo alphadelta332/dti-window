@@ -6,8 +6,10 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using vatsys.Plugin;
+using vatsys;
+using System.ComponentModel.Composition;
 
-[SupportedOSPlatform("windows6.1")]
 public class ChildAircraft
 {
     public string Name { get; set; }
@@ -22,7 +24,6 @@ public class ChildAircraft
     }
 }
 
-[SupportedOSPlatform("windows6.1")]
 public class Aircraft
 {
     public string Name { get; set; }
@@ -50,12 +51,40 @@ public class Aircraft
     }
 }
 
-[SupportedOSPlatform("windows6.1")]
-public class Program
+[Export(typeof(IPlugin))]
+public class DTIWindow : IPlugin
 {
     private static AircraftViewer? aircraftViewer;
     private static int nextAircraftNumber = 1;
 
+    private AircraftViewer? Window;
+
+    private readonly CustomToolStripMenuItem _opener;
+
+    private BindingList<Aircraft> AircraftList = new();
+    private Dictionary<Aircraft, List<Aircraft>> AircraftPairings = new();
+
+    public string Name => "DTI Window";
+
+    public DTIWindow()
+    {
+        _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("DTI Window"));
+        _opener.Item.Click += OpenForm;
+
+        MMI.AddCustomMenuItem(_opener);
+    }
+
+    private void OpenForm(object sender, EventArgs e)
+    {
+        if (Window == null || Window.IsDisposed)
+        {
+            Window = new AircraftViewer(AircraftList, AircraftPairings);
+        }
+
+        Window.Show(Form.ActiveForm);
+    }
+
+    /*
     [STAThread]
     public static void Main()
     {
@@ -212,5 +241,15 @@ public class Program
                 }
             }
         }
+    }
+    */
+    void IPlugin.OnFDRUpdate(FDP2.FDR updated)
+    {
+        return;
+    }
+
+    void IPlugin.OnRadarTrackUpdate(RDP.RadarTrack updated)
+    {
+        return;
     }
 }

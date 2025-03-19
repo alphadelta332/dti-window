@@ -6,14 +6,14 @@ using System.Runtime.Versioning;
 using System.Windows.Forms;
 using System.IO;
 using System.Linq;
+using vatsys;
 
-[SupportedOSPlatform("windows6.1")]
-public class AircraftViewer : Form
+public class AircraftViewer : BaseForm
 {
     private Panel aircraftPanel; // UI panel to display aircraft list
     private BindingList<Aircraft> aircraftList; // List of aircraft in the system
     private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores aircraft traffic pairings
-    private Font terminusFont; // Font used for UI text
+    private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular);
     private Aircraft? designatedAircraft = null; // Currently designated aircraft
     private string? hoveredCallsign = null; // Callsign of aircraft currently hovered over
     private static int nextAircraftNumber = 1; // Used to generate unique aircraft names
@@ -23,23 +23,6 @@ public class AircraftViewer : Form
     {
         this.aircraftList = aircraftList;
         this.trafficPairings = trafficPairings;
-
-        // Load the Terminus font, or use Arial if not found
-        string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        string fontPath = Path.Combine(baseDirectory, @"..\..\fonts\Terminus.ttf");
-        fontPath = Path.GetFullPath(fontPath);
-
-        if (File.Exists(fontPath))
-        {
-            PrivateFontCollection privateFonts = new PrivateFontCollection();
-            privateFonts.AddFontFile(fontPath);
-            terminusFont = new Font(privateFonts.Families[0], 12, FontStyle.Regular);
-        }
-        else
-        {
-            terminusFont = new Font("Arial", 12);
-            MessageBox.Show($"Terminus font not found. Looking in: {fontPath}\nDefault font 'Arial' will be used.");
-        }
 
         // Register event to refresh UI when aircraft list changes
         this.aircraftList.ListChanged += AircraftList_ListChanged;
