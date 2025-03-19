@@ -57,9 +57,9 @@ public class DTIWindow : IPlugin
     private static AircraftViewer? aircraftViewer;
     private static int nextAircraftNumber = 1;
 
-    private AircraftViewer? Window;
+    private AircraftViewer? Window; // DTI Window Form
 
-    private readonly CustomToolStripMenuItem _opener;
+    private readonly CustomToolStripMenuItem _opener; // Button within vatSys menu for plugin
 
     private BindingList<Aircraft> AircraftList = new();
     private Dictionary<Aircraft, List<Aircraft>> AircraftPairings = new();
@@ -68,6 +68,7 @@ public class DTIWindow : IPlugin
 
     public DTIWindow()
     {
+        // Initialises menu bar button.
         _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("DTI Window"));
         _opener.Item.Click += OpenForm;
 
@@ -78,6 +79,7 @@ public class DTIWindow : IPlugin
     {
         if (Window == null || Window.IsDisposed)
         {
+            // Create new window if it doesn't exist or has been closed.
             Window = new AircraftViewer(AircraftList, AircraftPairings);
         }
 
@@ -243,6 +245,8 @@ public class DTIWindow : IPlugin
         }
     }
     */
+
+    // Required for plugin to function.
     void IPlugin.OnFDRUpdate(FDP2.FDR updated)
     {
         return;
