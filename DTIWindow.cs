@@ -9,6 +9,9 @@ using System.Runtime.Versioning;
 using vatsys.Plugin;
 using vatsys;
 using System.ComponentModel.Composition;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Diagnostics;
 
 public class ChildAircraft
 {
@@ -57,8 +60,13 @@ public class DTIWindow : IPlugin
     private static AircraftViewer? aircraftViewer;
     private static int nextAircraftNumber = 1;
 
-    private AircraftViewer? Window; // DTI Window Form
+    private bool KeybindPressed; // Is the keyboard button currently pressed down?
+    private bool ListenersDefined; // Have we created the keybind listeners?
 
+    private Track? PreviousSelectedTrack;
+
+    private AircraftViewer? Window; // DTI Window Form
+    
     private readonly CustomToolStripMenuItem _opener; // Button within vatSys menu for plugin
 
     private BindingList<Aircraft> AircraftList = new();
@@ -73,9 +81,64 @@ public class DTIWindow : IPlugin
         _opener.Item.Click += OpenForm;
 
         MMI.AddCustomMenuItem(_opener);
+
+        MMI.SelectedTrackChanged += TrackSelected;
+
+        // Create our key listeners when the main ASD is created.
+        MMI.InvokeOnGUI(() =>
+        {
+            var mainForm = Application.OpenForms["Mainform"];
+            mainForm.KeyUp += KeyUp;
+            mainForm.KeyDown += KeyDown;
+        });
+        
     }
 
-    private void OpenForm(object sender, EventArgs e)
+    private void KeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.F7)
+        {
+            KeybindPressed = false;
+        }
+    }
+
+    private void KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.F7)
+        {
+            KeybindPressed = true;
+        }
+    }
+
+    // Called when a strip or radar target is clicked on.
+    private void TrackSelected(object sender, EventArgs e)
+    {
+        var track = MMI.SelectedTrack;
+
+        // If we previously clicked on an aircraft,
+        // We are holding F7 and
+        // We aren't de-designating an aircraft
+        // Pass this to AircraftViewer and re-designate the old aircraft.
+        if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeybindPressed)
+        {
+            MMI.SelectedTrack = PreviousSelectedTrack;
+            Debug.Print($"{PreviousSelectedTrack.GetPilot().Callsign} Passed traffic about {track.GetPilot().Callsign}");
+
+            // Ensure form has been created and is visible.
+            OpenForm();
+
+            var parentAircraft = Window.GetOrCreateAircraft(PreviousSelectedTrack.GetPilot().Callsign);
+            var childAircraft = Window.GetOrCreateAircraft(track.GetPilot().Callsign);
+
+            Window.CreateTrafficPairing(parentAircraft, childAircraft);
+
+            return;
+        }
+
+        PreviousSelectedTrack = track;
+    }
+
+    private void OpenForm(object? sender = null, EventArgs? e = null)
     {
         if (Window == null || Window.IsDisposed)
         {

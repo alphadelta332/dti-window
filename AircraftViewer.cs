@@ -212,7 +212,7 @@ public class AircraftViewer : BaseForm
     }
 
     // Ensures an aircraft exists in the list; creates it if needed
-    private Aircraft GetOrCreateAircraft(string callsign)
+    public Aircraft GetOrCreateAircraft(string callsign)
     {
         Aircraft? aircraft = aircraftList.FirstOrDefault(a => a.Callsign == callsign);
 
@@ -231,7 +231,7 @@ public class AircraftViewer : BaseForm
     }
 
     // Creates a traffic pairing between two aircraft
-    private void CreateTrafficPairing(Aircraft firstAircraft, Aircraft secondAircraft)
+    public void CreateTrafficPairing(Aircraft firstAircraft, Aircraft secondAircraft)
     {
         if (firstAircraft == secondAircraft) return; // Prevent self-pairing
 
