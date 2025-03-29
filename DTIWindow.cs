@@ -13,33 +13,38 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Diagnostics;
 
+// Represents a child aircraft in the system
 public class ChildAircraft
 {
-    public string Name { get; set; }
-    public string Callsign { get; set; }
-    public string Status { get; set; }
+    public string Name { get; set; } // Name of the child aircraft
+    public string Callsign { get; set; } // Callsign of the child aircraft
+    public string Status { get; set; } // Status of the child aircraft (e.g., "Passed", "Unpassed")
 
     public ChildAircraft(string name, string callsign, string status)
     {
+        // Ensure no null values are passed
         Name = name ?? throw new ArgumentNullException(nameof(name), "Child aircraft name cannot be null.");
         Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Child aircraft callsign cannot be null.");
         Status = status ?? throw new ArgumentNullException(nameof(status), "Child aircraft status cannot be null.");
     }
 }
 
+// Represents a parent aircraft in the system
 public class Aircraft
 {
-    public string Name { get; set; }
-    public string Callsign { get; set; }
-    public BindingList<ChildAircraft> Children { get; set; }
+    public string Name { get; set; } // Name of the aircraft
+    public string Callsign { get; set; } // Callsign of the aircraft
+    public BindingList<ChildAircraft> Children { get; set; } // List of child aircraft associated with this aircraft
 
     public Aircraft(string name, string callsign)
     {
+        // Ensure no null values are passed
         Name = name ?? throw new ArgumentNullException(nameof(name), "Aircraft name cannot be null.");
         Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Aircraft callsign cannot be null.");
-        Children = new BindingList<ChildAircraft>();
+        Children = new BindingList<ChildAircraft>(); // Initialize the list of children
     }
 
+    // Adds a child aircraft to the list if it doesn't already exist
     public void AddChild(ChildAircraft child)
     {
         if (!Children.Any(c => c.Callsign == child.Callsign))
@@ -48,268 +53,184 @@ public class Aircraft
         }
     }
 
+    // Checks if the aircraft has any child references
     public bool HasReferences()
     {
         return Children.Count > 0;
     }
 }
 
+// Main plugin class for the DTI Window
 [Export(typeof(IPlugin))]
-public class DTIWindow : IPlugin
+public class DTIWindow : Form, IPlugin
 {
-    private static AircraftViewer? aircraftViewer;
-    private static int nextAircraftNumber = 1;
+    private static AircraftViewer? aircraftViewer; // Reference to the AircraftViewer window
+    private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
 
-    private bool KeybindPressed; // Is the keyboard button currently pressed down?
-    private bool ListenersDefined; // Have we created the keybind listeners?
+    private bool KeybindPressed; // Tracks if the F7 key is currently pressed
+    private bool ListenersDefined; // Tracks if keybind listeners have been created
 
-    private Track? PreviousSelectedTrack;
+    private Track? PreviousSelectedTrack; // Stores the previously selected radar track
 
-    private AircraftViewer? Window; // DTI Window Form
+    private AircraftViewer? Window; // Reference to the DTI Window form
     
-    private readonly CustomToolStripMenuItem _opener; // Button within vatSys menu for plugin
+    private readonly CustomToolStripMenuItem _opener; // Menu button for opening the DTI Window
 
-    private BindingList<Aircraft> AircraftList = new();
-    private Dictionary<Aircraft, List<Aircraft>> AircraftPairings = new();
+    private BindingList<Aircraft> AircraftList = new(); // List of all parent aircraft
+    private Dictionary<Aircraft, List<Aircraft>> AircraftPairings = new(); // Dictionary of traffic pairings between aircraft
 
-    public string Name => "DTI Window";
+    public new string Name => "DTI Window"; // Plugin name
 
+    // Constructor for the DTIWindow plugin
     public DTIWindow()
     {
-        // Initialises menu bar button.
+        // Initialize the menu bar button for the plugin
         _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("DTI Window"));
-        _opener.Item.Click += OpenForm;
+        _opener.Item.Click += OpenForm; // Attach event handler to open the form
 
-        MMI.AddCustomMenuItem(_opener);
+        MMI.AddCustomMenuItem(_opener); // Add the menu item to the vatSys menu
 
-        MMI.SelectedTrackChanged += TrackSelected;
+        MMI.SelectedTrackChanged += TrackSelected; // Attach event handler for track selection changes
 
-        // Create our key listeners when the main ASD is created.
+        // Create keybind listeners when the main ASD is created
         MMI.InvokeOnGUI(() =>
         {
             var mainForm = Application.OpenForms["Mainform"];
-            mainForm.KeyUp += KeyUp;
-            mainForm.KeyDown += KeyDown;
+            mainForm.KeyUp += KeyUp; // Attach KeyUp event handler
+            mainForm.KeyDown += KeyDown; // Attach KeyDown event handler
         });
-        
     }
 
-    private void KeyUp(object sender, KeyEventArgs e)
+    // Event handler for when a key is released
+    private new void KeyUp(object sender, KeyEventArgs e)
     {
         if (e.KeyCode == Keys.F7)
         {
-            KeybindPressed = false;
+            KeybindPressed = false; // Set KeybindPressed to false when F7 is released
         }
     }
 
-    private void KeyDown(object sender, KeyEventArgs e)
+    // Event handler for when a key is pressed
+    private new void KeyDown(object sender, KeyEventArgs e)
     {
         if (e.KeyCode == Keys.F7)
         {
-            KeybindPressed = true;
+            KeybindPressed = true; // Set KeybindPressed to true when F7 is pressed
         }
     }
 
-    // Called when a strip or radar target is clicked on.
+    // Event handler for when a radar track is selected
     private void TrackSelected(object sender, EventArgs e)
     {
-        var track = MMI.SelectedTrack;
-
-        // If we previously clicked on an aircraft,
-        // We are holding F7 and
-        // We aren't de-designating an aircraft
-        // Pass this to AircraftViewer and re-designate the old aircraft.
-        if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeybindPressed)
+        try
         {
-            MMI.SelectedTrack = PreviousSelectedTrack;
-            Debug.Print($"{PreviousSelectedTrack.GetPilot().Callsign} Passed traffic about {track.GetPilot().Callsign}");
+            Debug.WriteLine("========== DEBUG START ==========");
+            Debug.WriteLine("TrackSelected method triggered.");
 
-            // Ensure form has been created and is visible.
-            OpenForm();
+            var track = MMI.SelectedTrack; // Get the currently selected track
 
-            var parentAircraft = Window.GetOrCreateAircraft(PreviousSelectedTrack.GetPilot().Callsign);
-            var childAircraft = Window.GetOrCreateAircraft(track.GetPilot().Callsign);
-
-            Window.CreateTrafficPairing(parentAircraft, childAircraft);
-
-            return;
-        }
-
-        PreviousSelectedTrack = track;
-    }
-
-    private void OpenForm(object? sender = null, EventArgs? e = null)
-    {
-        if (Window == null || Window.IsDisposed)
-        {
-            // Create new window if it doesn't exist or has been closed.
-            Window = new AircraftViewer(AircraftList, AircraftPairings);
-        }
-
-        Window.Show(Form.ActiveForm);
-    }
-
-    /*
-    [STAThread]
-    public static void Main()
-    {
-        AllocConsole();
-
-        BindingList<Aircraft> aircraftList = new BindingList<Aircraft>();
-        Dictionary<Aircraft, List<Aircraft>> trafficPairings = new Dictionary<Aircraft, List<Aircraft>>();
-
-        Thread viewerThread = new Thread(() =>
-        {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            aircraftViewer = new AircraftViewer(aircraftList, trafficPairings);
-            Application.Run(aircraftViewer);
-        });
-
-        viewerThread.SetApartmentState(ApartmentState.STA);
-        viewerThread.Start();
-
-        RunConsoleApp(aircraftList, trafficPairings);
-    }
-
-    [DllImport("kernel32.dll")]
-    private static extern bool AllocConsole();
-
-    private static void RunConsoleApp(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
-    {
-        while (true)
-        {
-            Console.WriteLine("\n1. Create Traffic Pairing");
-            Console.WriteLine("2. Display All Aircraft");
-            Console.WriteLine("3. View Traffic Pairings");
-            Console.WriteLine("4. Exit");
-            Console.Write("Choose an option: ");
-            string choice = Console.ReadLine() ?? string.Empty;
-
-            if (choice == "1")
+            if (track != null)
             {
-                CreateTrafficPairing(aircraftList, trafficPairings);
-            }
-            else if (choice == "2")
-            {
-                DisplayAircraft(aircraftList);
-            }
-            else if (choice == "3")
-            {
-                DisplayTrafficPairings(trafficPairings);
-            }
-            else if (choice == "4")
-            {
-                break;
+                Debug.WriteLine($"Selected track: {track.GetPilot().Callsign}");
             }
             else
             {
-                Console.WriteLine("Invalid choice. Try again.");
+                Debug.WriteLine("No track selected.");
             }
-        }
-    }
 
-    private static void CreateTrafficPairing(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
-    {
-        Console.Write("Enter First Aircraft Callsign: ");
-        string firstCallsign = Console.ReadLine() ?? string.Empty;
-        Aircraft firstAircraft = GetOrCreateAircraft(firstCallsign, aircraftList);
-
-        Console.Write("Enter Second Aircraft Callsign: ");
-        string secondCallsign = Console.ReadLine() ?? string.Empty;
-        Aircraft secondAircraft = GetOrCreateAircraft(secondCallsign, aircraftList);
-
-        // Add children relationships
-        firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
-        secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
-
-        // Add to traffic pairings
-        if (!trafficPairings.ContainsKey(firstAircraft))
-        {
-            trafficPairings[firstAircraft] = new List<Aircraft>();
-        }
-
-        if (!trafficPairings[firstAircraft].Contains(secondAircraft))
-        {
-            trafficPairings[firstAircraft].Add(secondAircraft);
-        }
-
-        if (!trafficPairings.ContainsKey(secondAircraft))
-        {
-            trafficPairings[secondAircraft] = new List<Aircraft>();
-        }
-
-        if (!trafficPairings[secondAircraft].Contains(firstAircraft))
-        {
-            trafficPairings[secondAircraft].Add(firstAircraft);
-        }
-
-        // Update UI
-        aircraftViewer?.Invoke((MethodInvoker)(() => aircraftViewer.PopulateAircraftDisplay()));
-    }
-
-    private static Aircraft GetOrCreateAircraft(string callsign, BindingList<Aircraft> aircraftList)
-    {
-        var existingAircraft = aircraftList.FirstOrDefault(a => a.Callsign.Equals(callsign, StringComparison.OrdinalIgnoreCase));
-        if (existingAircraft != null)
-        {
-            Console.WriteLine($"Found existing aircraft with callsign {callsign}. Using Aircraft: {existingAircraft.Name}");
-            return existingAircraft;
-        }
-
-        int newId = nextAircraftNumber;
-        string newName = $"Aircraft{newId}";
-        Console.WriteLine($"Creating new aircraft with ID: {newId}, Name: {newName}, Callsign: {callsign}");
-
-        var newAircraft = new Aircraft(newName, callsign);
-        aircraftList.Add(newAircraft);
-        nextAircraftNumber++;
-
-        return newAircraft;
-    }
-
-    private static void DisplayAircraft(BindingList<Aircraft> aircraftList)
-    {
-        if (aircraftList.Count == 0)
-        {
-            Console.WriteLine("No aircraft available.");
-        }
-        else
-        {
-            Console.WriteLine("Aircraft List:");
-            foreach (var aircraft in aircraftList)
+            // Debug each condition in the if statement
+            if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeybindPressed)
             {
-                Console.WriteLine($"Name: {aircraft.Name}, Callsign: {aircraft.Callsign}");
-                foreach (var child in aircraft.Children)
-                {
-                    Console.WriteLine($"  Child Callsign: {child.Callsign}, Status: {child.Status}");
-                }
-            }
-        }
-    }
+                Debug.WriteLine($"Previous track: {PreviousSelectedTrack.GetPilot().Callsign}");
+                Debug.WriteLine($"Passing traffic from {PreviousSelectedTrack.GetPilot().Callsign} to {track.GetPilot().Callsign}");
 
-    private static void DisplayTrafficPairings(Dictionary<Aircraft, List<Aircraft>> trafficPairings)
-    {
-        if (trafficPairings.Count == 0)
-        {
-            Console.WriteLine("No traffic pairings available.");
-        }
-        else
-        {
-            Console.WriteLine("Traffic Pairings:");
-            foreach (var pairing in trafficPairings)
+                MMI.SelectedTrack = PreviousSelectedTrack; // Re-select the previous track
+                Debug.WriteLine($"{PreviousSelectedTrack.GetPilot().Callsign} Passed traffic about {track.GetPilot().Callsign}");
+
+                // Ensure the AircraftViewer form is created and visible
+                OpenForm();
+
+                if (Window == null)
+                {
+                    Debug.WriteLine("Window is null. Exiting method.");
+                    return;
+                }
+
+                // Get or create the parent and child aircraft
+                var parentAircraft = Window.GetOrCreateAircraft(PreviousSelectedTrack.GetPilot().Callsign);
+                var childAircraft = Window.GetOrCreateAircraft(track.GetPilot().Callsign);
+
+                // Create a traffic pairing between the parent and child aircraft
+                Debug.WriteLine($"Creating traffic pairing between {parentAircraft.Callsign} and {childAircraft.Callsign}");
+                Window.CreateTrafficPairing(parentAircraft, childAircraft);
+
+                Debug.WriteLine("Traffic pairing created successfully.");
+                return;
+            }
+            else
             {
-                Console.WriteLine($"{pairing.Key.Callsign} has pairings with:");
-                foreach (var aircraft in pairing.Value)
-                {
-                    Console.WriteLine($"  - {aircraft.Callsign}");
-                }
+                Debug.WriteLine("Condition not met:");
+                Debug.WriteLine($"PreviousSelectedTrack != null: {PreviousSelectedTrack != null}");
+                Debug.WriteLine($"track != PreviousSelectedTrack: {track != PreviousSelectedTrack}");
+                Debug.WriteLine($"track != null: {track != null}");
+                Debug.WriteLine($"KeybindPressed: {KeybindPressed}");
             }
+
+            // Update the previously selected track
+            PreviousSelectedTrack = track;
+            Debug.WriteLine("PreviousSelectedTrack updated.");
+        }
+        catch (Exception ex)
+        {
+            // Log any exceptions that occur
+            Debug.WriteLine("========== EXCEPTION ==========");
+            Debug.WriteLine($"An error occurred: {ex.Message}");
+            Debug.WriteLine(ex.StackTrace);
+            Debug.WriteLine("========== END EXCEPTION ==========");
+        }
+        finally
+        {
+            Debug.WriteLine("========== DEBUG END ==========");
         }
     }
-    */
 
-    // Required for plugin to function.
+    // Opens the DTI Window form
+    private void OpenForm(object? sender = null, EventArgs? e = null)
+    {
+        try
+        {
+            Console.WriteLine("========== DEBUG START ==========");
+            Console.WriteLine("OpenForm method triggered.");
+
+            if (Window == null || Window.IsDisposed)
+            {
+                Console.WriteLine("Creating a new AircraftViewer window.");
+                // Create a new AircraftViewer window if it doesn't exist or has been closed
+                Window = new AircraftViewer(AircraftList, AircraftPairings);
+            }
+            else
+            {
+                Console.WriteLine("Reusing existing AircraftViewer window.");
+            }
+
+            Window.Show(Form.ActiveForm); // Show the AircraftViewer window
+            Console.WriteLine("AircraftViewer window displayed.");
+        }
+        catch (Exception ex)
+        {
+            // Log any exceptions that occur
+            Console.WriteLine("========== EXCEPTION ==========");
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+            Console.WriteLine("========== END EXCEPTION ==========");
+        }
+        finally
+        {
+            Console.WriteLine("========== DEBUG END ==========");
+        }
+    }
+
+    // Required for plugin to function (no implementation needed here)
     void IPlugin.OnFDRUpdate(FDP2.FDR updated)
     {
         return;
@@ -318,5 +239,88 @@ public class DTIWindow : IPlugin
     void IPlugin.OnRadarTrackUpdate(RDP.RadarTrack updated)
     {
         return;
+    }
+
+    private void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
+    {
+        try
+        {
+            Debug.WriteLine($"MouseDown event triggered. Mouse Button: {e.Button}");
+
+            if (e.Button == MouseButtons.Left)
+            {
+                child.Status = child.Status == "Passed" ? "Unpassed" : "Passed";
+                Debug.WriteLine($"Toggled status of child {child.Callsign} to {child.Status}");
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                child.Status = "Unpassed";
+                Debug.WriteLine($"Set status of child {child.Callsign} to Unpassed");
+            }
+            else if (e.Button == MouseButtons.Middle)
+            {
+                Debug.WriteLine("Middle mouse button clicked. Attempting to remove child...");
+
+                parent.Children.Remove(child);
+                Debug.WriteLine($"Removed child {child.Callsign} from parent {parent.Callsign}");
+
+                if (parent.Children.Count == 0)
+                {
+                    AircraftList.Remove(parent);
+                    Debug.WriteLine($"Removed parent {parent.Callsign} as it has no more children");
+                }
+
+                if (AircraftList.Count == 0)
+                {
+                    Debug.WriteLine("No parents or children remaining in the system.");
+                }
+            }
+
+            Debug.WriteLine($"Parent has {parent.Children.Count} children after action.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Exception in ChildLabel_MouseDown: {ex.Message}");
+            Debug.WriteLine(ex.StackTrace);
+        }
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Middle)
+        {
+            Debug.WriteLine("Middle click intercepted at the form level.");
+            // Prevent default behavior
+            return;
+        }
+
+        base.OnMouseDown(e); // Call the base class implementation of OnMouseDown
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        const int WM_MBUTTONDOWN = 0x0207; // Windows message for middle mouse button down
+
+        if (m.Msg == WM_MBUTTONDOWN)
+        {
+            Debug.WriteLine("Middle mouse button clicked. Intercepted in WndProc.");
+            // Prevent the default behavior by not calling base.WndProc
+            return;
+        }
+
+        base.WndProc(ref m);
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        Debug.WriteLine("Form is attempting to close.");
+        e.Cancel = true; // Prevent the form from closing
+    }
+
+    private void CloseApplication()
+    {
+        this.Close();
+        this.Dispose();
+        Application.Exit();
     }
 }

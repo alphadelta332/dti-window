@@ -7,24 +7,27 @@ using System.Windows.Forms;
 using System.IO;
 using System.Linq;
 using vatsys;
+using System.Diagnostics; // Add this to use Debug.WriteLine
 
+// Represents the AircraftViewer form, which displays and manages aircraft and their traffic pairings
 public class AircraftViewer : BaseForm
 {
-    private Panel aircraftPanel; // UI panel to display aircraft list
+    private Panel aircraftPanel; // UI panel to display the list of aircraft
     private BindingList<Aircraft> aircraftList; // List of aircraft in the system
-    private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores aircraft traffic pairings
-    private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular);
+    private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores traffic pairings between aircraft
+    private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
     private Aircraft? designatedAircraft = null; // Currently designated aircraft
-    private string? hoveredCallsign = null; // Callsign of aircraft currently hovered over
-    private static int nextAircraftNumber = 1; // Used to generate unique aircraft names
+    private string? hoveredCallsign = null; // Callsign of the aircraft currently hovered over
+    private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
     private string? selectedCallsign = null; // Currently selected callsign for the box
 
+    // Constructor for the AircraftViewer form
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
     {
-        this.aircraftList = aircraftList;
-        this.trafficPairings = trafficPairings;
+        this.aircraftList = aircraftList; // Initialize the aircraft list
+        this.trafficPairings = trafficPairings; // Initialize the traffic pairings dictionary
 
-        // Register event to refresh UI when aircraft list changes
+        // Register an event to refresh the UI when the aircraft list changes
         this.aircraftList.ListChanged += AircraftList_ListChanged;
 
         // Set form properties
@@ -44,19 +47,24 @@ public class AircraftViewer : BaseForm
             AutoScroll = true
         };
 
-        PopulateAircraftDisplay(); // Populate the aircraft list initially
+        // Populate the aircraft list initially
+        PopulateAircraftDisplay();
+
+        // Add the panel to the form
         this.Controls.Add(aircraftPanel);
     }
 
-    // Refreshes the UI when the aircraft list changes
+    // Event handler to refresh the UI when the aircraft list changes
     private void AircraftList_ListChanged(object? sender, ListChangedEventArgs e)
     {
         if (InvokeRequired)
         {
+            // If called from a different thread, invoke the UI update on the main thread
             Invoke(new MethodInvoker(PopulateAircraftDisplay));
         }
         else
         {
+            // Update the UI directly
             PopulateAircraftDisplay();
         }
     }
@@ -64,10 +72,10 @@ public class AircraftViewer : BaseForm
     // Populates the aircraft display with UI elements
     public void PopulateAircraftDisplay()
     {
-        aircraftPanel.Controls.Clear(); // Clear previous elements
-        int yOffset = 10; // Y-positioning for elements
+        aircraftPanel.Controls.Clear(); // Clear all previous UI elements
+        int yOffset = 10; // Y-positioning for UI elements
 
-        // Define static (designatable) aircraft callsigns
+        // Define static aircraft callsigns that can be selected
         string[] staticAircraft = { "QFA123", "VOZ456", "JST789" };
 
         // Create UI labels for each static aircraft
@@ -82,14 +90,15 @@ public class AircraftViewer : BaseForm
                 AutoSize = true
             };
 
-            // Set event handlers for selection and hovering
+            // Set event handlers for mouse actions
             fixedAircraftLabel.MouseDown += (sender, e) => FixedAircraftLabel_MouseDown(sender, e, callsign);
             fixedAircraftLabel.MouseEnter += (sender, e) => hoveredCallsign = callsign;
             fixedAircraftLabel.MouseLeave += (sender, e) => hoveredCallsign = null;
 
+            // Add the label to the panel
             aircraftPanel.Controls.Add(fixedAircraftLabel);
 
-            // Draw a rectangle around the selected callsign's label
+            // Highlight the selected callsign with a rectangle
             if (selectedCallsign != null && selectedCallsign == callsign)
             {
                 fixedAircraftLabel.Paint += (s, e) =>
@@ -103,10 +112,11 @@ public class AircraftViewer : BaseForm
                 fixedAircraftLabel.Invalidate(); // Force the label to repaint
             }
 
-            yOffset += 25; // Move the next label down
+            // Move the next label down
+            yOffset += 25;
         }
 
-        // Add a separator
+        // Add a separator line
         Panel separator = new Panel
         {
             Size = new Size(aircraftPanel.Width, 2),
@@ -116,9 +126,10 @@ public class AircraftViewer : BaseForm
         aircraftPanel.Controls.Add(separator);
         yOffset += 10;
 
-        // Display traffic pairings
+        // Display traffic pairings for each aircraft
         foreach (var aircraft in aircraftList)
         {
+            // Create a label for the parent aircraft
             Label parentLabel = new Label
             {
                 Text = aircraft.Callsign,
@@ -129,7 +140,7 @@ public class AircraftViewer : BaseForm
             };
             aircraftPanel.Controls.Add(parentLabel);
 
-            // Panel for the white square to indicate designation status
+            // Create a panel to indicate designation status with a white square
             Panel boxPanel = new Panel
             {
                 Size = new Size(16, 16),
@@ -137,6 +148,7 @@ public class AircraftViewer : BaseForm
                 BorderStyle = BorderStyle.None
             };
 
+            // Draw the white square and fill it if the aircraft is designated
             boxPanel.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -145,7 +157,6 @@ public class AircraftViewer : BaseForm
                     e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
                 }
 
-                // Fill the box white if the aircraft is designated
                 if (designatedAircraft != null && designatedAircraft.Callsign == aircraft.Callsign)
                 {
                     using (Brush brush = new SolidBrush(Color.White))
@@ -159,6 +170,7 @@ public class AircraftViewer : BaseForm
 
             yOffset += 25;
 
+            // Display child aircraft under the parent
             foreach (var child in aircraft.Children)
             {
                 Label childLabel = new Label
@@ -170,6 +182,7 @@ public class AircraftViewer : BaseForm
                     AutoSize = true
                 };
 
+                // Set event handler for mouse actions on child labels
                 childLabel.MouseDown += (sender, e) => ChildLabel_MouseDown(sender, e, aircraft, child);
 
                 aircraftPanel.Controls.Add(childLabel);
@@ -187,26 +200,28 @@ public class AircraftViewer : BaseForm
         {
             // Set the selected callsign for the box
             selectedCallsign = callsign;
-            PopulateAircraftDisplay(); // Refresh UI to reflect the selection
+
+            // Refresh the UI to reflect the selection
+            PopulateAircraftDisplay();
         }
     }
 
     // Handles keyboard input (e.g., F7 to create traffic pairing)
     private void AircraftViewer_KeyDown(object? sender, KeyEventArgs e)
     {
-        // Ensure we have both a designated and hovered aircraft before creating a pairing
+        // Ensure both a designated and hovered aircraft exist before creating a pairing
         if (e.KeyCode == Keys.F7 && selectedCallsign != null && hoveredCallsign != null)
         {
-            // Ensure the hovered aircraft exists in the list
+            // Get or create the hovered aircraft
             Aircraft hoveredAircraft = GetOrCreateAircraft(hoveredCallsign);
 
-            // Create the designated aircraft if it doesn't already exist
+            // Get or create the designated aircraft
             designatedAircraft = GetOrCreateAircraft(selectedCallsign);
 
-            // Create a traffic pairing
+            // Create a traffic pairing between the two aircraft
             CreateTrafficPairing(designatedAircraft, hoveredAircraft);
 
-            // Refresh UI to reflect the pairing
+            // Refresh the UI to reflect the pairing
             PopulateAircraftDisplay();
         }
     }
@@ -214,71 +229,199 @@ public class AircraftViewer : BaseForm
     // Ensures an aircraft exists in the list; creates it if needed
     public Aircraft GetOrCreateAircraft(string callsign)
     {
+        // Find the aircraft by callsign
         Aircraft? aircraft = aircraftList.FirstOrDefault(a => a.Callsign == callsign);
 
         if (aircraft == null)
         {
-            // If aircraft doesn't exist, create it
+            // If the aircraft doesn't exist, create it
             aircraft = new Aircraft($"Aircraft{nextAircraftNumber++}", callsign);
             aircraftList.Add(aircraft);
-            Console.WriteLine($"Aircraft {callsign} created.");
+            Debug.WriteLine($"Aircraft {callsign} created.");
         }
         else
         {
-            Console.WriteLine($"Using existing aircraft: {callsign}");
+            Debug.WriteLine($"Using existing aircraft: {callsign}");
         }
+
         return aircraft;
     }
 
     // Creates a traffic pairing between two aircraft
     public void CreateTrafficPairing(Aircraft firstAircraft, Aircraft secondAircraft)
     {
-        if (firstAircraft == secondAircraft) return; // Prevent self-pairing
+        try
+        {
+            Debug.WriteLine("========== DEBUG START ==========");
+            Debug.WriteLine($"CreateTrafficPairing called with: {firstAircraft.Callsign} and {secondAircraft.Callsign}");
 
-        // Add children to reflect the traffic pairing
-        firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
-        secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
+            if (firstAircraft == secondAircraft)
+            {
+                Debug.WriteLine("Attempted to create a pairing with the same aircraft. Aborting.");
+                return; // Prevent self-pairing
+            }
 
-        // Update traffic pairings dictionary
-        if (!trafficPairings.ContainsKey(firstAircraft))
-            trafficPairings[firstAircraft] = new List<Aircraft>();
-        if (!trafficPairings[firstAircraft].Contains(secondAircraft))
-            trafficPairings[firstAircraft].Add(secondAircraft);
+            // Add children to reflect the traffic pairing
+            firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
+            secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
+            Debug.WriteLine($"Children added: {firstAircraft.Callsign} -> {secondAircraft.Callsign}, {secondAircraft.Callsign} -> {firstAircraft.Callsign}");
 
-        if (!trafficPairings.ContainsKey(secondAircraft))
-            trafficPairings[secondAircraft] = new List<Aircraft>();
-        if (!trafficPairings[secondAircraft].Contains(firstAircraft))
-            trafficPairings[secondAircraft].Add(firstAircraft);
+            // Update the traffic pairings dictionary
+            if (!trafficPairings.ContainsKey(firstAircraft))
+            {
+                trafficPairings[firstAircraft] = new List<Aircraft>();
+                Debug.WriteLine($"Created new traffic pairing list for {firstAircraft.Callsign}");
+            }
+            if (!trafficPairings[firstAircraft].Contains(secondAircraft))
+            {
+                trafficPairings[firstAircraft].Add(secondAircraft);
+                Debug.WriteLine($"Added {secondAircraft.Callsign} to {firstAircraft.Callsign}'s traffic pairings");
+            }
 
-        Console.WriteLine($"Traffic pairing created between {firstAircraft.Callsign} and {secondAircraft.Callsign}");
-        PopulateAircraftDisplay(); // Refresh UI to reflect the pairing
+            if (!trafficPairings.ContainsKey(secondAircraft))
+            {
+                trafficPairings[secondAircraft] = new List<Aircraft>();
+                Debug.WriteLine($"Created new traffic pairing list for {secondAircraft.Callsign}");
+            }
+            if (!trafficPairings[secondAircraft].Contains(firstAircraft))
+            {
+                trafficPairings[secondAircraft].Add(firstAircraft);
+                Debug.WriteLine($"Added {firstAircraft.Callsign} to {secondAircraft.Callsign}'s traffic pairings");
+            }
+
+            Debug.WriteLine($"Traffic pairing successfully created between {firstAircraft.Callsign} and {secondAircraft.Callsign}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("========== EXCEPTION ==========");
+            Debug.WriteLine($"An error occurred in CreateTrafficPairing: {ex.Message}");
+            Debug.WriteLine(ex.StackTrace);
+            Debug.WriteLine("========== END EXCEPTION ==========");
+        }
+        finally
+        {
+            Debug.WriteLine("========== DEBUG END ==========");
+        }
+
+        // Refresh the UI to reflect the pairing
+        PopulateAircraftDisplay();
     }
 
     // Handles clicks on child aircraft labels
     private void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
     {
-        if (e.Button == MouseButtons.Left)
+        try
         {
-            // Toggle the status between "Passed" and "Unpassed"
-            child.Status = child.Status == "Passed" ? "Unpassed" : "Passed";
-        }
-        else if (e.Button == MouseButtons.Right)
-        {
-            // Set the status to "Unpassed"
-            child.Status = "Unpassed";
-        }
-        else if (e.Button == MouseButtons.Middle)
-        {
-            // Remove the child from the parent's children list
-            parent.Children.Remove(child);
+            Debug.WriteLine($"MouseDown event triggered. Mouse Button: {e.Button}");
 
-            // If the parent has no more children, remove the parent from the aircraft list
-            if (parent.Children.Count == 0)
+            if (e.Button == MouseButtons.Left)
             {
-                aircraftList.Remove(parent);
+                // Toggle the status between "Passed" and "Unpassed"
+                child.Status = child.Status == "Passed" ? "Unpassed" : "Passed";
+                Debug.WriteLine($"Toggled status of child {child.Callsign} to {child.Status}");
             }
+            else if (e.Button == MouseButtons.Right)
+            {
+                // Set the status to "Unpassed"
+                child.Status = "Unpassed";
+                Debug.WriteLine($"Set status of child {child.Callsign} to Unpassed");
+            }
+            else if (e.Button == MouseButtons.Middle)
+            {
+                Debug.WriteLine("Middle mouse button clicked. Attempting to remove child...");
+
+                // Remove the child from the parent's children list
+                parent.Children.Remove(child);
+                Debug.WriteLine($"Removed child {child.Callsign} from parent {parent.Callsign}");
+
+                // If the parent has no more children, remove the parent from the aircraft list
+                if (parent.Children.Count == 0)
+                {
+                    aircraftList.Remove(parent);
+                    Debug.WriteLine($"Removed parent {parent.Callsign} as it has no more children");
+                }
+
+                // Check if there are no parents and no children left
+                if (aircraftList.Count == 0)
+                {
+                    Debug.WriteLine("No parents or children remaining in the system.");
+                }
+            }
+
+            Debug.WriteLine($"Parent has {parent.Children.Count} children after action.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Exception in ChildLabel_MouseDown: {ex.Message}");
+            Debug.WriteLine(ex.StackTrace);
         }
 
-        PopulateAircraftDisplay(); // Refresh UI to reflect the change
+        // Refresh the UI to reflect the change
+        PopulateAircraftDisplay();
+    }
+
+    protected override void OnPreviewClientMouseUp(BaseMouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Middle)
+        {
+            Debug.WriteLine("Middle mouse button clicked. Handling it within the plugin.");
+
+            // Get the mouse position relative to the aircraftPanel
+            Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+
+            // Iterate through the child controls of the aircraftPanel
+            foreach (Control control in aircraftPanel.Controls)
+            {
+                if (control is Label childLabel && control.Bounds.Contains(mousePosition))
+                {
+                    Debug.WriteLine($"Label under cursor: {childLabel.Text}");
+
+                    // Find the parent and child objects associated with the label
+                    foreach (var parent in aircraftList)
+                    {
+                        var child = parent.Children.FirstOrDefault(c => c.Callsign == childLabel.Text);
+                        if (child != null)
+                        {
+                            Debug.WriteLine($"Found parent: {parent.Callsign}, child: {child.Callsign}");
+                            HandleMiddleClick(parent, child);
+                            break;
+                        }
+                    }
+
+                    // Prevent the default behavior by not calling the base method for middle-click
+                    return;
+                }
+            }
+
+            Debug.WriteLine("No label found under the mouse cursor.");
+            return; // Prevent the default behavior if no label is found
+        }
+
+        base.OnPreviewClientMouseUp(e); // Call the base method for other mouse buttons
+    }
+
+    private void HandleMiddleClick(Aircraft parent, ChildAircraft child)
+    {
+        Debug.WriteLine("Executing custom middle-click functionality to remove child.");
+
+        // Remove the child from the parent's children list
+        parent.Children.Remove(child);
+        Debug.WriteLine($"Removed child {child.Callsign} from parent {parent.Callsign}");
+
+        // If the parent has no more children, remove the parent from the aircraft list
+        if (parent.Children.Count == 0)
+        {
+            aircraftList.Remove(parent);
+            Debug.WriteLine($"Removed parent {parent.Callsign} as it has no more children");
+        }
+
+        // Check if there are no parents and no children left
+        if (aircraftList.Count == 0)
+        {
+            Debug.WriteLine("No parents or children remaining in the system.");
+        }
+
+        // Refresh the UI to reflect the change
+        PopulateAircraftDisplay();
     }
 }

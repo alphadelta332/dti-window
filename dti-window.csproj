@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <Reference Include="vatSys">
-      <HintPath>C:\Program Files (x86)\vatSys\bin\vatSys.exe</HintPath>
+      <HintPath>C:\vatSys\bin\vatSys.exe</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
