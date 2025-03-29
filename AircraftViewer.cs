@@ -75,57 +75,6 @@ public class AircraftViewer : BaseForm
         aircraftPanel.Controls.Clear(); // Clear all previous UI elements
         int yOffset = 10; // Y-positioning for UI elements
 
-        // Define static aircraft callsigns that can be selected
-        string[] staticAircraft = { "QFA123", "VOZ456", "JST789" };
-
-        // Create UI labels for each static aircraft
-        foreach (string callsign in staticAircraft)
-        {
-            Label fixedAircraftLabel = new Label
-            {
-                Text = callsign,
-                Font = terminusFont,
-                ForeColor = Color.FromArgb(200, 255, 200),
-                Location = new Point(30, yOffset),
-                AutoSize = true
-            };
-
-            // Set event handlers for mouse actions
-            fixedAircraftLabel.MouseDown += (sender, e) => FixedAircraftLabel_MouseDown(sender, e, callsign);
-            fixedAircraftLabel.MouseEnter += (sender, e) => hoveredCallsign = callsign;
-            fixedAircraftLabel.MouseLeave += (sender, e) => hoveredCallsign = null;
-
-            // Add the label to the panel
-            aircraftPanel.Controls.Add(fixedAircraftLabel);
-
-            // Highlight the selected callsign with a rectangle
-            if (selectedCallsign != null && selectedCallsign == callsign)
-            {
-                fixedAircraftLabel.Paint += (s, e) =>
-                {
-                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    using (Pen pen = new Pen(Color.White, 2))
-                    {
-                        e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, fixedAircraftLabel.Width - 1, fixedAircraftLabel.Height - 1));
-                    }
-                };
-                fixedAircraftLabel.Invalidate(); // Force the label to repaint
-            }
-
-            // Move the next label down
-            yOffset += 25;
-        }
-
-        // Add a separator line
-        Panel separator = new Panel
-        {
-            Size = new Size(aircraftPanel.Width, 2),
-            Location = new Point(0, yOffset),
-            BackColor = Color.Gray
-        };
-        aircraftPanel.Controls.Add(separator);
-        yOffset += 10;
-
         // Display traffic pairings for each aircraft
         foreach (var aircraft in aircraftList)
         {
