@@ -127,7 +127,7 @@ public class AircraftViewer : BaseForm
                     Text = child.Callsign,
                     Font = terminusFont,
                     ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255),
-                    Location = new Point(80, yOffset),
+                    Location = new Point(100, yOffset),
                     AutoSize = true
                 };
 
