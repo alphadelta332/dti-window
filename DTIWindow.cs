@@ -176,6 +176,42 @@ public class DTIWindow : Form, IPlugin
                 Debug.WriteLine($"KeybindPressed: {KeybindPressed}");
             }
 
+            // Check if the selected track corresponds to a parent aircraft
+            if (track != null)
+            {
+                var parentAircraft = AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign);
+                if (parentAircraft != null)
+                {
+                    Debug.WriteLine($"Parent aircraft found: {parentAircraft.Callsign}");
+
+                    // Update the designated aircraft in the AircraftViewer
+                    if (Window != null && !Window.IsDisposed)
+                    {
+                        Window.SetDesignatedAircraft(parentAircraft);
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("Selected track does not correspond to any parent aircraft.");
+
+                    // Clear the designated aircraft if no match is found
+                    if (Window != null && !Window.IsDisposed)
+                    {
+                        Window.SetDesignatedAircraft(null);
+                    }
+                }
+            }
+            else
+            {
+                Debug.WriteLine("No track selected.");
+
+                // Clear the designated aircraft if no track is selected
+                if (Window != null && !Window.IsDisposed)
+                {
+                    Window.SetDesignatedAircraft(null);
+                }
+            }
+
             // Update the previously selected track
             PreviousSelectedTrack = track;
             Debug.WriteLine("PreviousSelectedTrack updated.");

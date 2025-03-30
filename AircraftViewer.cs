@@ -373,4 +373,13 @@ public class AircraftViewer : BaseForm
         // Refresh the UI to reflect the change
         PopulateAircraftDisplay();
     }
+
+    public void SetDesignatedAircraft(Aircraft? aircraft)
+    {
+        designatedAircraft = aircraft;
+        Debug.WriteLine($"Designated aircraft set to: {designatedAircraft?.Callsign ?? "None"}");
+
+        // Refresh the UI to reflect the change
+        PopulateAircraftDisplay();
+    }
 }
