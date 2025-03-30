@@ -11,8 +11,9 @@ vatSys Plugin that creates a window to record passing of Directed Traffic Inform
 Add a traffic pairing when you identify that directed traffic information will need to be passed between two aircraft at some point.
 
 1. `Designate` an aircraft
-2. `Hover mouse` over another aircraft
-3. Press `F7`
+2. Hold `F7`
+3. `Designate` another aircraft
+4. This will create a traffic pairing between these two aircraft in the DTI Window.
 
 ### Record whether the traffic has been passed
 Keep track of what traffic information has been passed, and what is outstanding.

@@ -252,6 +252,9 @@ public class AircraftViewer : BaseForm
             Debug.WriteLine("========== DEBUG END ==========");
         }
 
+        // Reset KeybindPressed after successfully creating a traffic pairing
+        DTIWindow.ResetKeybindPressed();
+
         // Refresh the UI to reflect the pairing
         PopulateAircraftDisplay();
     }

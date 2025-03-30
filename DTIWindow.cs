@@ -12,6 +12,7 @@ using System.ComponentModel.Composition;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 // Represents a child aircraft in the system
 public class ChildAircraft
@@ -67,7 +68,7 @@ public class DTIWindow : Form, IPlugin
     private static AircraftViewer? aircraftViewer; // Reference to the AircraftViewer window
     private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
 
-    private bool KeybindPressed; // Tracks if the F7 key is currently pressed
+    private static bool KeybindPressed; // Tracks if the F7 key is currently pressed
     private bool ListenersDefined; // Tracks if keybind listeners have been created
 
     private Track? PreviousSelectedTrack; // Stores the previously selected radar track
@@ -78,6 +79,52 @@ public class DTIWindow : Form, IPlugin
 
     private BindingList<Aircraft> AircraftList = new(); // List of all parent aircraft
     private Dictionary<Aircraft, List<Aircraft>> AircraftPairings = new(); // Dictionary of traffic pairings between aircraft
+
+    private CancellationTokenSource? keybindTimeout;
+
+    private const int WH_KEYBOARD_LL = 13;
+    private const int WM_KEYDOWN = 0x0100;
+    private const int WM_KEYUP = 0x0101;
+
+    private static IntPtr _hookID = IntPtr.Zero;
+    private static LowLevelKeyboardProc _proc = HookCallback;
+
+    private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    {
+        if (nCode >= 0)
+        {
+            int vkCode = Marshal.ReadInt32(lParam);
+            Debug.WriteLine($"Global hook: Key event detected. Key: {(Keys)vkCode}, Event: {wParam}");
+
+            if (wParam == (IntPtr)WM_KEYDOWN && vkCode == (int)Keys.F7)
+            {
+                Debug.WriteLine("Global hook: F7 key pressed.");
+                KeybindPressed = true; // Set KeybindPressed to true
+            }
+            else if (wParam == (IntPtr)WM_KEYUP && vkCode == (int)Keys.F7)
+            {
+                Debug.WriteLine("Global hook: F7 key released.");
+                KeybindPressed = false; // Set KeybindPressed to false
+            }
+        }
+
+        return CallNextHookEx(_hookID, nCode, wParam, lParam);
+    }
+
+    private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr GetModuleHandle(string lpModuleName);
 
     public new string Name => "DTI Window"; // Plugin name
 
@@ -96,26 +143,63 @@ public class DTIWindow : Form, IPlugin
         MMI.InvokeOnGUI(() =>
         {
             var mainForm = Application.OpenForms["Mainform"];
-            mainForm.KeyUp += KeyUp; // Attach KeyUp event handler
-            mainForm.KeyDown += KeyDown; // Attach KeyDown event handler
+            if (mainForm != null)
+            {
+                mainForm.KeyUp += KeyUp;
+                mainForm.KeyDown += KeyDown;
+                mainForm.LostFocus += (s, e) =>
+                {
+                    KeybindPressed = false;
+                    Debug.WriteLine("Mainform lost focus. KeybindPressed set to false.");
+                };
+                Debug.WriteLine("KeyUp, KeyDown, and LostFocus event listeners attached to Mainform.");
+            }
+            else
+            {
+                Debug.WriteLine("Mainform not found. Event listeners not attached.");
+            }
         });
+
+        StartGlobalHook(); // Start the global keyboard hook
     }
 
     // Event handler for when a key is released
     private new void KeyUp(object sender, KeyEventArgs e)
     {
+        Debug.WriteLine($"KeyUp event triggered. Key: {e.KeyCode}. Active window: {Form.ActiveForm?.Name ?? "None"}");
         if (e.KeyCode == Keys.F7)
         {
             KeybindPressed = false; // Set KeybindPressed to false when F7 is released
+            Debug.WriteLine("F7 key released. KeybindPressed set to false.");
+
+            // Cancel the timeout
+            keybindTimeout?.Cancel();
         }
     }
 
     // Event handler for when a key is pressed
     private new void KeyDown(object sender, KeyEventArgs e)
     {
+        Debug.WriteLine($"KeyDown event triggered. Key: {e.KeyCode}. Active window: {Form.ActiveForm?.Name ?? "None"}");
         if (e.KeyCode == Keys.F7)
         {
             KeybindPressed = true; // Set KeybindPressed to true when F7 is pressed
+            Debug.WriteLine("F7 key pressed. KeybindPressed set to true.");
+
+            // Cancel any existing timeout
+            keybindTimeout?.Cancel();
+
+            // Start a new timeout
+            keybindTimeout = new CancellationTokenSource();
+            var token = keybindTimeout.Token;
+            Task.Delay(5000, token).ContinueWith(t =>
+            {
+                if (!t.IsCanceled)
+                {
+                    KeybindPressed = false;
+                    Debug.WriteLine("KeybindPressed automatically reset to false after timeout.");
+                }
+            });
         }
     }
 
@@ -141,6 +225,7 @@ public class DTIWindow : Form, IPlugin
             // Debug each condition in the if statement
             if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeybindPressed)
             {
+                Debug.WriteLine("KeybindPressed is true. Proceeding to create traffic pairing.");
                 Debug.WriteLine($"Previous track: {PreviousSelectedTrack.GetPilot().Callsign}");
                 Debug.WriteLine($"Passing traffic from {PreviousSelectedTrack.GetPilot().Callsign} to {track.GetPilot().Callsign}");
 
@@ -165,11 +250,12 @@ public class DTIWindow : Form, IPlugin
                 Window.CreateTrafficPairing(parentAircraft, childAircraft);
 
                 Debug.WriteLine("Traffic pairing created successfully.");
+                ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
                 return;
             }
             else
             {
-                Debug.WriteLine("Condition not met:");
+                Debug.WriteLine("Condition not met for creating traffic pairing:");
                 Debug.WriteLine($"PreviousSelectedTrack != null: {PreviousSelectedTrack != null}");
                 Debug.WriteLine($"track != PreviousSelectedTrack: {track != PreviousSelectedTrack}");
                 Debug.WriteLine($"track != null: {track != null}");
@@ -323,14 +409,12 @@ public class DTIWindow : Form, IPlugin
 
     protected override void OnMouseDown(MouseEventArgs e)
     {
-        if (e.Button == MouseButtons.Middle)
-        {
-            Debug.WriteLine("Middle click intercepted at the form level.");
-            // Prevent default behavior
-            return;
-        }
+        base.OnMouseDown(e);
 
-        base.OnMouseDown(e); // Call the base class implementation of OnMouseDown
+        if (e.Button == MouseButtons.Left)
+        {
+            HandleLeftClick(e);
+        }
     }
 
     protected override void WndProc(ref Message m)
@@ -349,8 +433,10 @@ public class DTIWindow : Form, IPlugin
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
+        StopGlobalHook(); // Stop the global keyboard hook
         Debug.WriteLine("Form is attempting to close.");
         e.Cancel = true; // Prevent the form from closing
+        base.OnFormClosing(e);
     }
 
     private void CloseApplication()
@@ -358,5 +444,62 @@ public class DTIWindow : Form, IPlugin
         this.Close();
         this.Dispose();
         Application.Exit();
+    }
+
+    public void StartGlobalHook()
+    {
+        if (_hookID == IntPtr.Zero)
+        {
+            _hookID = SetHook(_proc);
+            Debug.WriteLine("Global keyboard hook started.");
+        }
+        else
+        {
+            Debug.WriteLine("Global keyboard hook is already active.");
+        }
+    }
+
+    public void StopGlobalHook()
+    {
+        if (_hookID != IntPtr.Zero)
+        {
+            UnhookWindowsHookEx(_hookID);
+            _hookID = IntPtr.Zero;
+            Debug.WriteLine("Global keyboard hook stopped.");
+        }
+        else
+        {
+            Debug.WriteLine("Global keyboard hook was not active.");
+        }
+    }
+
+    private static IntPtr SetHook(LowLevelKeyboardProc proc)
+    {
+        using (Process curProcess = Process.GetCurrentProcess())
+        using (ProcessModule curModule = curProcess.MainModule)
+        {
+            return SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
+        }
+    }
+
+    public static void ResetKeybindPressed()
+    {
+        KeybindPressed = false;
+        Debug.WriteLine("KeybindPressed explicitly reset to false after creating a traffic pairing.");
+    }
+
+    private void HandleLeftClick(MouseEventArgs e)
+    {
+        // Check if the click is on blank space (not on any control)
+        var clickedControl = this.GetChildAtPoint(e.Location);
+        if (clickedControl == null)
+        {
+            Debug.WriteLine("Left click on blank space. Resetting KeybindPressed.");
+            ResetKeybindPressed();
+        }
+        else
+        {
+            Debug.WriteLine($"Left click on control: {clickedControl.GetType().Name}. No reset of KeybindPressed.");
+        }
     }
 }
