@@ -216,6 +216,9 @@ public class DTIWindow : Form, IPlugin
             if (track != null)
             {
                 Debug.WriteLine($"Selected track: {track.GetPilot().Callsign}");
+
+                // Call DisplaySelectedTrackInfo to log additional information about the selected track
+                DisplaySelectedTrackInfo();
             }
             else
             {
@@ -500,6 +503,47 @@ public class DTIWindow : Form, IPlugin
         else
         {
             Debug.WriteLine($"Left click on control: {clickedControl.GetType().Name}. No reset of KeybindPressed.");
+        }
+    }
+
+    // Displays information about the currently selected radar track
+    public static void DisplaySelectedTrackInfo()
+    {
+        try
+        {
+            // Check if a track is selected
+            if (MMI.SelectedTrack == null)
+            {
+                Debug.WriteLine("No track is currently selected.");
+                return;
+            }
+
+            // Get the selected track
+            var selectedTrack = MMI.SelectedTrack;
+
+            // Retrieve the FDR (Flight Data Record) associated with the track
+            var fdr = selectedTrack.GetFDR();
+            if (fdr == null)
+            {
+                Debug.WriteLine("No FDR associated with the selected track.");
+                return;
+            }
+
+            // Get the callsign and FDR state
+            string callsign = fdr.Callsign;
+            var fdrState = fdr.State;
+
+            // Display the information
+            Debug.WriteLine($"Selected Track Callsign: {callsign}");
+            Debug.WriteLine($"FDR State: {fdrState}");
+        }
+        catch (Exception ex)
+        {
+            // Log any exceptions that occur
+            Debug.WriteLine("========== EXCEPTION ==========");
+            Debug.WriteLine($"An error occurred in DisplaySelectedTrackInfo: {ex.Message}");
+            Debug.WriteLine(ex.StackTrace);
+            Debug.WriteLine("========== END EXCEPTION ==========");
         }
     }
 }
