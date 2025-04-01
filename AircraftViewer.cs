@@ -78,17 +78,14 @@ public class AircraftViewer : BaseForm
         {
             Debug.WriteLine("========== DEBUG START: PopulateAircraftDisplay ==========");
 
-            // Log the FDR state, color, and HMI state for all parent aircraft
+            // Log the HMI state and color for all parent aircraft
             foreach (var aircraft in aircraftList)
             {
-                // Retrieve the FDR state and color for the aircraft's callsign
-                var (fdrState, color) = GetFDRStateAndColor(aircraft.Callsign);
+                // Retrieve the HMI state and color for the aircraft's callsign
+                var (hmiState, color) = GetHMIStateAndColor(aircraft.Callsign);
 
-                // Retrieve the HMI state for the aircraft's callsign
-                var hmiState = GetHMIState(aircraft.Callsign);
-
-                // Log the FDR state, color, and HMI state
-                Debug.WriteLine($"Aircraft: {aircraft.Callsign}, FDR State: {fdrState}, Color: {color}, HMI State: {hmiState}");
+                // Log the HMI state and color
+                Debug.WriteLine($"Aircraft: {aircraft.Callsign}, HMI State: {hmiState}, Color: {color}");
             }
 
             aircraftPanel.Controls.Clear(); // Clear all previous UI elements
@@ -97,15 +94,15 @@ public class AircraftViewer : BaseForm
             // Display traffic pairings for each aircraft
             foreach (var aircraft in aircraftList)
             {
-                // Retrieve the FDR state and color for the aircraft
-                var (fdrState, color) = GetFDRStateAndColor(aircraft.Callsign);
+                // Retrieve the HMI state and color for the aircraft
+                var (hmiState, color) = GetHMIStateAndColor(aircraft.Callsign);
 
                 // Create a label for the parent aircraft
                 Label parentLabel = new Label
                 {
                     Text = aircraft.Callsign,
                     Font = terminusFont,
-                    ForeColor = color, // Set the label color based on the FDR state
+                    ForeColor = color, // Set the label color based on the HMI state
                     Location = new Point(30, yOffset),
                     AutoSize = true
                 };
@@ -457,55 +454,7 @@ public class AircraftViewer : BaseForm
         }
     }
 
-    // Map FDR states to Colours.Identities
-    private static Colours.Identities MapFDRStateToIdentity(string fdrState)
-    {
-        return fdrState switch
-        {
-            "STATE_CONTROLLED" => Colours.Identities.Jurisdiction,
-            "STATE_HANDOVER_FIRST" => Colours.Identities.Jurisdiction,
-            "STATE_UNCONTROLLED" => Colours.Identities.Announced,
-            "STATE_COORDINATED" => Colours.Identities.Announced,
-            "STATE_HANDOVER" => Colours.Identities.Announced,
-            "STATE_PREACTIVE" => Colours.Identities.Preactive,
-            "STATE_NULL" => Colours.Identities.Preactive,
-            "STATE_FINISHED" => Colours.Identities.Preactive,
-            "STATE_SUSPENDED" => Colours.Identities.Preactive,
-            "STATE_INACTIVE" => Colours.Identities.Preactive,
-            "STATE_INHIBITED" => Colours.Identities.Preactive,
-            _ => Colours.Identities.Default // Default color if no match
-        };
-    }
-
-    // Method to get the FDR state and corresponding color
-    public static (string fdrState, Color color) GetFDRStateAndColor(string callsign)
-    {
-        try
-        {
-            // Retrieve the FDR state using the existing method
-            string fdrState = GetFDRState(callsign);
-
-            if (string.IsNullOrEmpty(fdrState) || fdrState == "Unknown State")
-            {
-                return ("Unknown State", Color.Gray); // Return a default color for unknown states
-            }
-
-            // Map the FDR state to a Colours.Identities value
-            Colours.Identities identity = MapFDRStateToIdentity(fdrState);
-
-            // Retrieve the color for the identity
-            Color color = Colours.GetColour(identity);
-
-            return (fdrState, color);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Error retrieving color for FDR state: {ex.Message}");
-            return ("Error", Color.Red); // Return a default error color
-        }
-    }
-
-    private string GetHMIState(string callsign)
+    private static string GetHMIState(string callsign)
     {
         try
         {
@@ -543,6 +492,51 @@ public class AircraftViewer : BaseForm
         {
             Debug.WriteLine($"Error retrieving HMI state for {callsign}: {ex.Message}");
             return "Error retrieving HMI state";
+        }
+    }
+
+    // Map HMI states to Colours.Identities
+    private static Colours.Identities MapHMIStateToIdentity(string hmiState)
+    {
+        return hmiState switch
+        {
+            "Jurisdiction" => Colours.Identities.Jurisdiction,       // Active state maps to Jurisdiction
+            "HandoverOut" => Colours.Identities.Jurisdiction,       // Active state maps to Jurisdiction
+            "Announced" => Colours.Identities.Announced,        // Inactive state maps to Announced
+            "HandoverIn" => Colours.Identities.Announced,        // Inactive state maps to Announced
+            "Preactive" => Colours.Identities.Preactive,       // Suspended state maps to Preactive
+            "PostJurisdiction" => Colours.Identities.PostJurisdiction,       // Suspended state maps to Preactive
+            "NonJurisdiction" => Colours.Identities.NonJurisdiction,       // Suspended state maps to Preactive
+            "GhostJurisdiction" => Colours.Identities.GhostJurisdiction,       // Suspended state maps to Preactive
+            _ => Colours.Identities.Default                         // Default color if no match
+        };
+    }
+
+    // Method to get the HMI state and corresponding color
+    public static (string hmiState, Color color) GetHMIStateAndColor(string callsign)
+    {
+        try
+        {
+            // Retrieve the HMI state using the existing method
+            string hmiState = GetHMIState(callsign);
+
+            if (string.IsNullOrEmpty(hmiState) || hmiState == "Unknown State")
+            {
+                return ("Unknown State", Color.Gray); // Return a default color for unknown states
+            }
+
+            // Map the HMI state to a Colours.Identities value
+            Colours.Identities identity = MapHMIStateToIdentity(hmiState);
+
+            // Retrieve the color for the identity
+            Color color = Colours.GetColour(identity);
+
+            return (hmiState, color);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error retrieving color for HMI state: {ex.Message}");
+            return ("Error", Color.Red); // Return a default error color
         }
     }
 }
