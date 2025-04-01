@@ -81,11 +81,11 @@ public class AircraftViewer : BaseForm
             // Log the FDR state for all parent aircraft
             foreach (var aircraft in aircraftList)
             {
-                // Retrieve the FDR state for the aircraft's callsign
-                var fdrState = GetFDRState(aircraft.Callsign);
+                // Retrieve the FDR state and color for the aircraft's callsign
+                var (fdrState, color) = GetFDRStateAndColor(aircraft.Callsign);
 
-                // Log the FDR state
-                Debug.WriteLine($"Aircraft: {aircraft.Callsign}, FDR State: {fdrState}");
+                // Log the FDR state and color
+                Debug.WriteLine($"Aircraft: {aircraft.Callsign}, FDR State: {fdrState}, Color: {color}");
             }
 
             aircraftPanel.Controls.Clear(); // Clear all previous UI elements
@@ -94,12 +94,15 @@ public class AircraftViewer : BaseForm
             // Display traffic pairings for each aircraft
             foreach (var aircraft in aircraftList)
             {
+                // Retrieve the FDR state and color for the aircraft
+                var (fdrState, color) = GetFDRStateAndColor(aircraft.Callsign);
+
                 // Create a label for the parent aircraft
                 Label parentLabel = new Label
                 {
                     Text = aircraft.Callsign,
                     Font = terminusFont,
-                    ForeColor = Color.FromArgb(200, 255, 200),
+                    ForeColor = color, // Set the label color based on the FDR state
                     Location = new Point(30, yOffset),
                     AutoSize = true
                 };
@@ -410,7 +413,7 @@ public class AircraftViewer : BaseForm
         PopulateAircraftDisplay();
     }
 
-    private string GetFDRState(string callsign)
+    private static string GetFDRState(string callsign)
     {
         try
         {
@@ -448,6 +451,51 @@ public class AircraftViewer : BaseForm
         {
             Debug.WriteLine($"Error retrieving FDR state for {callsign}: {ex.Message}");
             return "Error retrieving FDR state";
+        }
+    }
+
+    // Map FDR states to Colours.Identities
+    private static Colours.Identities MapFDRStateToIdentity(string fdrState)
+    {
+        return fdrState switch
+        {
+            "STATE_CONTROLLED" => Colours.Identities.Jurisdiction, // Controlled state maps to Jurisdiction
+            "STATE_UNCONTROLLED" => Colours.Identities.Announced,  // Uncontrolled state maps to Announced
+            "Preactive" => Colours.Identities.Preactive,
+            "Jurisdiction" => Colours.Identities.Jurisdiction,
+            "Announced" => Colours.Identities.Announced,
+            "NonJurisdiction" => Colours.Identities.NonJurisdiction,
+            "PostJurisdiction" => Colours.Identities.PostJurisdiction,
+            "Handover" => Colours.Identities.Handover,
+            _ => Colours.Identities.Default // Default color if no match
+        };
+    }
+
+    // Method to get the FDR state and corresponding color
+    public static (string fdrState, Color color) GetFDRStateAndColor(string callsign)
+    {
+        try
+        {
+            // Retrieve the FDR state using the existing method
+            string fdrState = GetFDRState(callsign);
+
+            if (string.IsNullOrEmpty(fdrState) || fdrState == "Unknown State")
+            {
+                return ("Unknown State", Color.Gray); // Return a default color for unknown states
+            }
+
+            // Map the FDR state to a Colours.Identities value
+            Colours.Identities identity = MapFDRStateToIdentity(fdrState);
+
+            // Retrieve the color for the identity
+            Color color = Colours.GetColour(identity);
+
+            return (fdrState, color);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error retrieving color for FDR state: {ex.Message}");
+            return ("Error", Color.Red); // Return a default error color
         }
     }
 }
