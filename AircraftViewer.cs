@@ -78,14 +78,17 @@ public class AircraftViewer : BaseForm
         {
             Debug.WriteLine("========== DEBUG START: PopulateAircraftDisplay ==========");
 
-            // Log the FDR state for all parent aircraft
+            // Log the FDR state, color, and HMI state for all parent aircraft
             foreach (var aircraft in aircraftList)
             {
                 // Retrieve the FDR state and color for the aircraft's callsign
                 var (fdrState, color) = GetFDRStateAndColor(aircraft.Callsign);
 
-                // Log the FDR state and color
-                Debug.WriteLine($"Aircraft: {aircraft.Callsign}, FDR State: {fdrState}, Color: {color}");
+                // Retrieve the HMI state for the aircraft's callsign
+                var hmiState = GetHMIState(aircraft.Callsign);
+
+                // Log the FDR state, color, and HMI state
+                Debug.WriteLine($"Aircraft: {aircraft.Callsign}, FDR State: {fdrState}, Color: {color}, HMI State: {hmiState}");
             }
 
             aircraftPanel.Controls.Clear(); // Clear all previous UI elements
@@ -459,14 +462,17 @@ public class AircraftViewer : BaseForm
     {
         return fdrState switch
         {
-            "STATE_CONTROLLED" => Colours.Identities.Jurisdiction, // Controlled state maps to Jurisdiction
-            "STATE_UNCONTROLLED" => Colours.Identities.Announced,  // Uncontrolled state maps to Announced
-            "Preactive" => Colours.Identities.Preactive,
-            "Jurisdiction" => Colours.Identities.Jurisdiction,
-            "Announced" => Colours.Identities.Announced,
-            "NonJurisdiction" => Colours.Identities.NonJurisdiction,
-            "PostJurisdiction" => Colours.Identities.PostJurisdiction,
-            "Handover" => Colours.Identities.Handover,
+            "STATE_CONTROLLED" => Colours.Identities.Jurisdiction,
+            "STATE_HANDOVER_FIRST" => Colours.Identities.Jurisdiction,
+            "STATE_UNCONTROLLED" => Colours.Identities.Announced,
+            "STATE_COORDINATED" => Colours.Identities.Announced,
+            "STATE_HANDOVER" => Colours.Identities.Announced,
+            "STATE_PREACTIVE" => Colours.Identities.Preactive,
+            "STATE_NULL" => Colours.Identities.Preactive,
+            "STATE_FINISHED" => Colours.Identities.Preactive,
+            "STATE_SUSPENDED" => Colours.Identities.Preactive,
+            "STATE_INACTIVE" => Colours.Identities.Preactive,
+            "STATE_INHIBITED" => Colours.Identities.Preactive,
             _ => Colours.Identities.Default // Default color if no match
         };
     }
@@ -496,6 +502,47 @@ public class AircraftViewer : BaseForm
         {
             Debug.WriteLine($"Error retrieving color for FDR state: {ex.Message}");
             return ("Error", Color.Red); // Return a default error color
+        }
+    }
+
+    private string GetHMIState(string callsign)
+    {
+        try
+        {
+            // Use reflection to access the AircraftTracks field
+            var aircraftTracksField = typeof(MMI).GetField("AircraftTracks", BindingFlags.Static | BindingFlags.NonPublic);
+            if (aircraftTracksField == null)
+            {
+                return "AircraftTracks field not found";
+            }
+
+            // Get the value of AircraftTracks and cast it to the correct type
+            var aircraftTracks = aircraftTracksField.GetValue(null) as ConcurrentDictionary<object, Track>;
+            if (aircraftTracks == null)
+            {
+                return "AircraftTracks is null";
+            }
+
+            // Find the track with the matching callsign
+            var matchingTrack = aircraftTracks.Values.FirstOrDefault(track =>
+            {
+                var fdr = track.GetFDR();
+                return fdr?.Callsign == callsign;
+            });
+
+            if (matchingTrack == null)
+            {
+                return "No matching track found";
+            }
+
+            // Retrieve the HMI state
+            var hmiState = matchingTrack.State;
+            return hmiState.ToString();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error retrieving HMI state for {callsign}: {ex.Message}");
+            return "Error retrieving HMI state";
         }
     }
 }
