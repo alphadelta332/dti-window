@@ -4,10 +4,12 @@ using System.Drawing;
 using System.Drawing.Text;
 using System.Runtime.Versioning;
 using System.Windows.Forms;
+using System.Reflection;
 using System.IO;
 using System.Linq;
 using vatsys;
 using System.Diagnostics; // Add this to use Debug.WriteLine
+using System.Collections.Concurrent; // Add this to use ConcurrentDictionary
 
 // Represents the AircraftViewer form, which displays and manages aircraft and their traffic pairings
 public class AircraftViewer : BaseForm
@@ -72,73 +74,95 @@ public class AircraftViewer : BaseForm
     // Populates the aircraft display with UI elements
     public void PopulateAircraftDisplay()
     {
-        aircraftPanel.Controls.Clear(); // Clear all previous UI elements
-        int yOffset = 10; // Y-positioning for UI elements
-
-        // Display traffic pairings for each aircraft
-        foreach (var aircraft in aircraftList)
+        try
         {
-            // Create a label for the parent aircraft
-            Label parentLabel = new Label
+            Debug.WriteLine("========== DEBUG START: PopulateAircraftDisplay ==========");
+
+            // Log the FDR state for all parent aircraft
+            foreach (var aircraft in aircraftList)
             {
-                Text = aircraft.Callsign,
-                Font = terminusFont,
-                ForeColor = Color.FromArgb(200, 255, 200),
-                Location = new Point(30, yOffset),
-                AutoSize = true
-            };
-            aircraftPanel.Controls.Add(parentLabel);
+                // Retrieve the FDR state for the aircraft's callsign
+                var fdrState = GetFDRState(aircraft.Callsign);
 
-            // Create a panel to indicate designation status with a white square
-            Panel boxPanel = new Panel
-            {
-                Size = new Size(16, 16),
-                Location = new Point(parentLabel.Location.X - 20, parentLabel.Location.Y),
-                BorderStyle = BorderStyle.None
-            };
-
-            // Draw the white square and fill it if the aircraft is designated
-            boxPanel.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (Pen pen = new Pen(Color.White, 4))
-                {
-                    e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
-                }
-
-                if (designatedAircraft != null && designatedAircraft.Callsign == aircraft.Callsign)
-                {
-                    using (Brush brush = new SolidBrush(Color.White))
-                    {
-                        e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
-                    }
-                }
-            };
-
-            aircraftPanel.Controls.Add(boxPanel);
-
-            yOffset += 25;
-
-            // Display child aircraft under the parent
-            foreach (var child in aircraft.Children)
-            {
-                Label childLabel = new Label
-                {
-                    Text = child.Callsign,
-                    Font = terminusFont,
-                    ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255),
-                    Location = new Point(100, yOffset),
-                    AutoSize = true
-                };
-
-                // Set event handler for mouse actions on child labels
-                childLabel.MouseDown += (sender, e) => ChildLabel_MouseDown(sender, e, aircraft, child);
-
-                aircraftPanel.Controls.Add(childLabel);
-                yOffset += 20;
+                // Log the FDR state
+                Debug.WriteLine($"Aircraft: {aircraft.Callsign}, FDR State: {fdrState}");
             }
 
-            yOffset += 10;
+            aircraftPanel.Controls.Clear(); // Clear all previous UI elements
+            int yOffset = 10; // Y-positioning for UI elements
+
+            // Display traffic pairings for each aircraft
+            foreach (var aircraft in aircraftList)
+            {
+                // Create a label for the parent aircraft
+                Label parentLabel = new Label
+                {
+                    Text = aircraft.Callsign,
+                    Font = terminusFont,
+                    ForeColor = Color.FromArgb(200, 255, 200),
+                    Location = new Point(30, yOffset),
+                    AutoSize = true
+                };
+                aircraftPanel.Controls.Add(parentLabel);
+
+                // Create a panel to indicate designation status with a white square
+                Panel boxPanel = new Panel
+                {
+                    Size = new Size(16, 16),
+                    Location = new Point(parentLabel.Location.X - 20, parentLabel.Location.Y),
+                    BorderStyle = BorderStyle.None
+                };
+
+                // Draw the white square and fill it if the aircraft is designated
+                boxPanel.Paint += (s, e) =>
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    using (Pen pen = new Pen(Color.White, 4))
+                    {
+                        e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
+                    }
+
+                    if (designatedAircraft != null && designatedAircraft.Callsign == aircraft.Callsign)
+                    {
+                        using (Brush brush = new SolidBrush(Color.White))
+                        {
+                            e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
+                        }
+                    }
+                };
+
+                aircraftPanel.Controls.Add(boxPanel);
+
+                yOffset += 25;
+
+                // Display child aircraft under the parent
+                foreach (var child in aircraft.Children)
+                {
+                    Label childLabel = new Label
+                    {
+                        Text = child.Callsign,
+                        Font = terminusFont,
+                        ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255),
+                        Location = new Point(100, yOffset),
+                        AutoSize = true
+                    };
+
+                    // Set event handler for mouse actions on child labels
+                    childLabel.MouseDown += (sender, e) => ChildLabel_MouseDown(sender, e, aircraft, child);
+
+                    aircraftPanel.Controls.Add(childLabel);
+                    yOffset += 20;
+                }
+
+                yOffset += 10;
+            }
+
+            Debug.WriteLine("========== DEBUG END: PopulateAircraftDisplay ==========");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Exception in PopulateAircraftDisplay: {ex.Message}");
+            Debug.WriteLine(ex.StackTrace);
         }
     }
 
@@ -384,5 +408,46 @@ public class AircraftViewer : BaseForm
 
         // Refresh the UI to reflect the change
         PopulateAircraftDisplay();
+    }
+
+    private string GetFDRState(string callsign)
+    {
+        try
+        {
+            // Use reflection to access the AircraftTracks field
+            var aircraftTracksField = typeof(MMI).GetField("AircraftTracks", BindingFlags.Static | BindingFlags.NonPublic);
+            if (aircraftTracksField == null)
+            {
+                return "AircraftTracks field not found";
+            }
+
+            // Get the value of AircraftTracks and cast it to the correct type
+            var aircraftTracks = aircraftTracksField.GetValue(null) as ConcurrentDictionary<object, Track>;
+            if (aircraftTracks == null)
+            {
+                return "AircraftTracks is null";
+            }
+
+            // Find the track with the matching callsign
+            var matchingTrack = aircraftTracks.Values.FirstOrDefault(track =>
+            {
+                var fdr = track.GetFDR();
+                return fdr?.Callsign == callsign;
+            });
+
+            if (matchingTrack == null)
+            {
+                return "No matching track found";
+            }
+
+            // Retrieve the FDR state
+            var fdrState = matchingTrack.GetFDR()?.State;
+            return fdrState?.ToString() ?? "Unknown State";
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error retrieving FDR state for {callsign}: {ex.Message}");
+            return "Error retrieving FDR state";
+        }
     }
 }
