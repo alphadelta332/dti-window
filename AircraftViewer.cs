@@ -32,10 +32,10 @@ public class AircraftViewer : BaseForm
         this.aircraftList.ListChanged += AircraftList_ListChanged;
 
         // Set form properties
-        this.Text = "DTI Window";
+        this.Text = "Traffic Info";
         this.Width = 200;
         this.Height = 350;
-        this.BackColor = Color.FromArgb(160, 170, 170);
+        this.BackColor = Colours.GetColour(Colours.Identities.WindowBackground);
 
         // Create the main panel for displaying aircraft
         aircraftPanel = new Panel
