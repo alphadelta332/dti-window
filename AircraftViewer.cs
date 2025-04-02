@@ -19,7 +19,6 @@ public class AircraftViewer : BaseForm
     private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
     private Aircraft? designatedAircraft = null; // Currently designated aircraft
     private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
-    private string? selectedCallsign = null; // Currently selected callsign for the box
 
     // Constructor for the AircraftViewer form
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
