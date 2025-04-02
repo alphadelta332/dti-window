@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Debug with vatSys": {
+      "commandName": "Executable",
+      "executablePath": "C:\\vatSys\\bin\\vatSys.exe",
+      "workingDirectory": "C:\\vatSys\\bin"
+    }
+  }
+}
