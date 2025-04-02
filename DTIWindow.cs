@@ -82,18 +82,19 @@ public class DTIWindow : Form, IPlugin
 
     private CancellationTokenSource? keybindTimeout;
 
-    private const int WH_KEYBOARD_LL = 13;
-    private const int WM_KEYDOWN = 0x0100;
-    private const int WM_KEYUP = 0x0101;
+    private const int WH_KEYBOARD_LL = 13; // Low-level keyboard hook constant
+    private const int WM_KEYDOWN = 0x0100; // Windows message for key down
+    private const int WM_KEYUP = 0x0101; // Windows message for key up
 
-    private static IntPtr _hookID = IntPtr.Zero;
-    private static LowLevelKeyboardProc _proc = HookCallback;
+    private static IntPtr _hookID = IntPtr.Zero; // Handle for the global keyboard hook
+    private static LowLevelKeyboardProc _proc = HookCallback; // Delegate for the keyboard hook callback
 
+    // Hook callback for global keyboard events
     private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
         if (nCode >= 0)
         {
-            int vkCode = Marshal.ReadInt32(lParam);
+            int vkCode = Marshal.ReadInt32(lParam); // Get the virtual key code
             Debug.WriteLine($"Global hook: Key event detected. Key: {(Keys)vkCode}, Event: {wParam}");
 
             if (wParam == (IntPtr)WM_KEYDOWN && vkCode == (int)Keys.F7)
@@ -108,7 +109,7 @@ public class DTIWindow : Form, IPlugin
             }
         }
 
-        return CallNextHookEx(_hookID, nCode, wParam, lParam);
+        return CallNextHookEx(_hookID, nCode, wParam, lParam); // Pass the event to the next hook in the chain
     }
 
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
