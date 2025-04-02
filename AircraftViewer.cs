@@ -19,7 +19,6 @@ public class AircraftViewer : BaseForm
     private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores traffic pairings between aircraft
     private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
     private Aircraft? designatedAircraft = null; // Currently designated aircraft
-    private string? hoveredCallsign = null; // Callsign of the aircraft currently hovered over
     private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
     private string? selectedCallsign = null; // Currently selected callsign for the box
 
@@ -37,10 +36,6 @@ public class AircraftViewer : BaseForm
         this.Width = 200;
         this.Height = 350;
         this.BackColor = Color.FromArgb(160, 170, 170);
-
-        // Enable keyboard input for the form
-        this.KeyPreview = true;
-        this.KeyDown += AircraftViewer_KeyDown;
 
         // Create the main panel for displaying aircraft
         aircraftPanel = new Panel
@@ -181,26 +176,6 @@ public class AircraftViewer : BaseForm
             selectedCallsign = callsign;
 
             // Refresh the UI to reflect the selection
-            PopulateAircraftDisplay();
-        }
-    }
-
-    // Handles keyboard input (e.g., F7 to create traffic pairing)
-    private void AircraftViewer_KeyDown(object? sender, KeyEventArgs e)
-    {
-        // Ensure both a designated and hovered aircraft exist before creating a pairing
-        if (e.KeyCode == Keys.F7 && selectedCallsign != null && hoveredCallsign != null)
-        {
-            // Get or create the hovered aircraft
-            Aircraft hoveredAircraft = GetOrCreateAircraft(hoveredCallsign);
-
-            // Get or create the designated aircraft
-            designatedAircraft = GetOrCreateAircraft(selectedCallsign);
-
-            // Create a traffic pairing between the two aircraft
-            CreateTrafficPairing(designatedAircraft, hoveredAircraft);
-
-            // Refresh the UI to reflect the pairing
             PopulateAircraftDisplay();
         }
     }
