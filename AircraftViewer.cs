@@ -54,6 +54,9 @@ public class AircraftViewer : BaseForm
 
         // Add the panel to the form
         this.Controls.Add(aircraftPanel);
+
+        // Initialize the TracksChanged event subscription
+        Initialize();
     }
 
     // Event handler to refresh the UI when the aircraft list changes
@@ -537,6 +540,101 @@ public class AircraftViewer : BaseForm
         {
             Debug.WriteLine($"Error retrieving color for HMI state: {ex.Message}");
             return ("Error", Color.Red); // Return a default error color
+        }
+    }
+
+    public void Initialize()
+    {
+        try
+        {
+            // Get the TracksChanged event using reflection
+            EventInfo tracksChangedEvent = typeof(MMI).GetEvent("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
+            if (tracksChangedEvent == null)
+            {
+                Debug.WriteLine("TracksChanged event not found.");
+                return;
+            }
+            else
+            {
+                Debug.WriteLine("TracksChanged event found.");
+            }
+
+            // Get the backing field for the TracksChanged event
+            FieldInfo? eventField = typeof(MMI).GetField("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
+            if (eventField == null)
+            {
+                Debug.WriteLine("TracksChanged event backing field not found.");
+                return;
+            }
+
+            // Get the current value of the event (the delegate)
+            Delegate? currentDelegate = eventField.GetValue(null) as Delegate;
+
+            // Create a delegate for the OnTracksChanged method
+            MethodInfo onTracksChangedMethod = typeof(AircraftViewer).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (onTracksChangedMethod == null)
+            {
+                Debug.WriteLine("OnTracksChanged method not found.");
+                return;
+            }
+
+            // Get the event handler type (EventHandler<TracksChangedEventArgs>)
+            Type? eventHandlerType = tracksChangedEvent.EventHandlerType;
+            if (eventHandlerType == null)
+            {
+                Debug.WriteLine("TracksChanged event handler type not found.");
+                return;
+            }
+
+            // Create a delegate of the correct type for the event handler
+            Delegate newDelegate = Delegate.CreateDelegate(eventHandlerType, this, onTracksChangedMethod);
+
+            // Combine the new delegate with the existing delegate
+            Delegate? combinedDelegate = Delegate.Combine(currentDelegate, newDelegate);
+
+            // Set the combined delegate back to the event field
+            eventField.SetValue(null, combinedDelegate);
+
+            Debug.WriteLine("Successfully subscribed to TracksChanged event.");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error subscribing to TracksChanged event: {ex.Message}");
+        }
+    }
+
+    // Event handler method
+    private void OnTracksChanged(object sender, object e)
+    {
+        try
+        {
+            // Dynamically check if the event args are of type TracksChangedEventArgs
+            var tracksChangedEventArgsType = typeof(MMI).Assembly.GetType("vatsys.TracksChangedEventArgs");
+            if (tracksChangedEventArgsType != null && tracksChangedEventArgsType.IsInstanceOfType(e))
+            {
+                Debug.WriteLine("Event args are of type TracksChangedEventArgs.");
+
+                // Access the 'Track' property
+                var trackProperty = tracksChangedEventArgsType.GetProperty("Track", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                var track = trackProperty?.GetValue(e);
+
+                // Access the 'Removed' property
+                var removedProperty = tracksChangedEventArgsType.GetProperty("Removed", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                bool removed = removedProperty != null && (bool)removedProperty.GetValue(e);
+
+                Debug.WriteLine($"TracksChanged event triggered. Track: {track}, Removed: {removed}");
+            }
+            else
+            {
+                Debug.WriteLine("TracksChanged event triggered, but event args type is unknown.");
+            }
+
+            // Refresh the aircraft display
+            PopulateAircraftDisplay();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error handling TracksChanged event: {ex.Message}");
         }
     }
 }
