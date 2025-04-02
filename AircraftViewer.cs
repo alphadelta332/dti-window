@@ -123,7 +123,7 @@ public class AircraftViewer : BaseForm
                 boxPanel.Paint += (s, e) =>
                 {
                     e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    using (Pen pen = new Pen(Color.White, 4))
+                    using (Pen pen = new Pen(Color.White, 3))
                     {
                         e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
                     }
