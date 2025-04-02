@@ -2,8 +2,8 @@
 vatSys Plugin that creates a window to record passing of Directed Traffic Information
 
 ## Installation
-1. Download the plugin here (link).
-2. Unzip the file and copy to the base vatSys plugins directory: "[...]\Program Files (x86)\vatSys\bin\Plugins".
+1. Download the [latest release](https://github.com/alphadelta332/dti-window/releases).
+2. Unzip the file and copy to the base vatSys plugins directory: "[vatSys installation folder]\bin\Plugins". Do NOT install in My Documents\vatSys Files.
 3. Verify it has been installed in vatSys by checking "Info > About".
 
 ## How to use
