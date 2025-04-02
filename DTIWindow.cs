@@ -133,7 +133,7 @@ public class DTIWindow : Form, IPlugin
     public DTIWindow()
     {
         // Initialize the menu bar button for the plugin
-        _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("DTI Window"));
+        _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("Traffic Info"));
         _opener.Item.Click += OpenForm; // Attach event handler to open the form
 
         MMI.AddCustomMenuItem(_opener); // Add the menu item to the vatSys menu
