@@ -65,11 +65,7 @@ public class Aircraft
 [Export(typeof(IPlugin))]
 public class DTIWindow : Form, IPlugin
 {
-    private static AircraftViewer? aircraftViewer; // Reference to the AircraftViewer window
-    private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
-
     private static bool KeybindPressed; // Tracks if the F7 key is currently pressed
-    private bool ListenersDefined; // Tracks if keybind listeners have been created
 
     private Track? PreviousSelectedTrack; // Stores the previously selected radar track
 
