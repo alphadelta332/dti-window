@@ -33,7 +33,7 @@ public class DTIWindow : Form, IPlugin
         _opener = new CustomToolStripMenuItem(
             CustomToolStripMenuItemWindowType.Main,
             CustomToolStripMenuItemCategory.Windows,
-            new ToolStripMenuItem("Traffic Info"));
+            new ToolStripMenuItem("Traffic Info Beta"));
         _opener.Item.Click += OpenForm;
         MMI.AddCustomMenuItem(_opener);
 

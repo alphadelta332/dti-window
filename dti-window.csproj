@@ -7,14 +7,20 @@
     <UseWindowsForms>true</UseWindowsForms>
     <PlatformTarget>x86</PlatformTarget>
     <ProgramFilesX86>$(MSBuildProgramFiles32)</ProgramFilesX86>
+    <VatSysFolder>$(ProgramFilesX86)\vatSys\bin</VatSysFolder>
     <PlatformTarget>x86</PlatformTarget>
     <LangVersion>13.0</LangVersion>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <BaseOutputPath>$([System.Environment]::GetFolderPath(SpecialFolder.MyDocuments))\vatSys Files\Profiles\Australia\Plugins\DTIWindow</BaseOutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="vatSys">
-      <HintPath>$(ProgramFilesX86)\vatSys\bin\vatSys.exe</HintPath>
+      <HintPath>$(VatSysFolder)\vatSys.exe</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

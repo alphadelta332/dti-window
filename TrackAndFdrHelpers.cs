@@ -249,7 +249,7 @@ public class TrackAndFdrHelpers : IDisposable
     private static Func<vatsys.Track, string> CompileHmiStateExpression()
     {
         var trackParam = Expression.Parameter(typeof(vatsys.Track), "track");
-        var stateProperty = Expression.Property(trackParam, nameof(vatsys.Track.State));
+        var stateProperty = Expression.Field(trackParam, nameof(vatsys.Track.State));
         var toStringCall = Expression.Call(stateProperty, typeof(object).GetMethod(nameof(object.ToString), Type.EmptyTypes));
         return Expression.Lambda<Func<vatsys.Track, string>>(toStringCall, trackParam).Compile();
     }
@@ -260,7 +260,7 @@ public class TrackAndFdrHelpers : IDisposable
         var trackParam = Expression.Parameter(typeof(vatsys.Track), "track");
         var getFdrMethod = typeof(vatsys.Track).GetMethod(nameof(vatsys.Track.GetFDR));
         var fdrCall = Expression.Call(trackParam, getFdrMethod);
-        var fdrStateProperty = Expression.Property(fdrCall, "State");
+        var fdrStateProperty = Expression.Field(fdrCall, "State");
         var toStringCall = Expression.Call(fdrStateProperty, typeof(object).GetMethod(nameof(object.ToString), Type.EmptyTypes));
         return Expression.Lambda<Func<vatsys.Track, string>>(toStringCall, trackParam).Compile();
     }
