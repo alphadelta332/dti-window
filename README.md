@@ -23,7 +23,7 @@ Keep track of what traffic information has been passed, and what is outstanding.
 1. `Left click` the indented callsign to change it from **white** to **blue**. This signifies that the traffic has been passed on this aircraft.
 2. `Right click` the indented callsign to change it from **blue** to **white**. This signifies that the traffic has **not yet** been passed on this aircraft.
 
-<img width="700" alt="vatSys_7oV7ErF06N" src="https://github.com/user-attachments/assets/c25b8934-ad69-48b7-a533-9d38f80d65fe" />
+<img width="700" alt="vatSys_y3omzuJyHW" src="https://github.com/user-attachments/assets/9593e14b-f6e7-4761-b4d4-538b9054affd" />
 
 ### Delete aircraft from the window
 Clean up the window when traffic information is no longer required between two aircraft.
