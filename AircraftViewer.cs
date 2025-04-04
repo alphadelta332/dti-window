@@ -29,6 +29,7 @@ public class AircraftViewer : BaseForm
         Width = 200;
         Height = 350;
         BackColor = Colours.GetColour(Colours.Identities.WindowBackground);
+        MiddleClickClose = false;
 
         _aircraftPanel = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         Controls.Add(_aircraftPanel);
