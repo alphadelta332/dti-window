@@ -72,7 +72,6 @@ public class DTIWindow : IPlugin, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    // Required for plugin to function (no implementation needed here)
     /// <inheritdoc/>
     void IPlugin.OnFDRUpdate(FDP2.FDR updated)
     {
