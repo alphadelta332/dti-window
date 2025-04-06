@@ -185,8 +185,18 @@ public class DTIWindow : IPlugin, IDisposable
             // Start a new timeout
             _keybindTimeout = new CancellationTokenSource();
             var token = _keybindTimeout.Token;
-            await Task.Delay(5000, token);
-            KeybindPressed = false;
+            try
+            {
+                await Task.Delay(5000, token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Handle the cancellation
+            }
+            finally
+            {
+                KeybindPressed = false; // Reset KeybindPressed after the timeout
+            }
         }
     }
 
