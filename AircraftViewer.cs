@@ -1,42 +1,45 @@
-using System;
-using System.ComponentModel;
-using System.Drawing;
-using System.Drawing.Text;
-using System.Runtime.Versioning;
-using System.Windows.Forms;
-using System.Reflection;
-using System.IO;
-using System.Linq;
-using vatsys;
 using System.Collections.Concurrent; // For thread-safe collections
+using System.ComponentModel;
+using System.Reflection;
+using vatsys;
 
-// Represents the AircraftViewer form, which displays and manages aircraft and their traffic pairings
+namespace DtiWindow;
+
+/// <summary>
+/// Represents the AircraftViewer form, which displays and manages aircraft and their traffic pairings.
+/// </summary>
 public class AircraftViewer : BaseForm
 {
-    private Panel aircraftPanel; // UI panel to display the list of aircraft
-    private BindingList<Aircraft> aircraftList; // List of aircraft in the system
-    private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores traffic pairings between aircraft
-    private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
-    private Aircraft? designatedAircraft = null; // Currently designated aircraft
-    private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
+    private static volatile int nextAircraftNumber = 1; // Counter for generating unique aircraft names
+    private readonly Panel _aircraftPanel; // UI panel to display the list of aircraft
+    private readonly BindingList<Aircraft> _aircraftList; // List of aircraft in the system
+    private readonly Dictionary<Aircraft, List<Aircraft>> _trafficPairings; // Stores traffic pairings between aircraft
+    private readonly Font _terminusFont = new("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
+    private Aircraft? _designatedAircraft; // Currently designated aircraft
 
-    // Constructor for the AircraftViewer form
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AircraftViewer"/> class.
+    /// </summary>
+    /// <param name="aircraftList">The aircraft list.</param>
+    /// <param name="trafficPairings">A list of traffic pairings.</param>
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
     {
-        this.aircraftList = aircraftList; // Initialize the aircraft list
-        this.trafficPairings = trafficPairings; // Initialize the traffic pairings dictionary
+        _aircraftList = aircraftList; // Initialize the aircraft list
+        _trafficPairings = trafficPairings; // Initialize the traffic pairings dictionary
 
         // Register an event to refresh the UI when the aircraft list changes
-        this.aircraftList.ListChanged += AircraftList_ListChanged;
+        _aircraftList.ListChanged += AircraftList_ListChanged;
 
         // Set form properties
-        this.Text = "Traffic Info";
-        this.Width = 200;
-        this.Height = 350;
-        this.BackColor = Colours.GetColour(Colours.Identities.WindowBackground);
+        Text = "Traffic Info";
+        Width = 200;
+        Height = 350;
+        BackColor = Colours.GetColour(Colours.Identities.WindowBackground);
+
+        MiddleClickClose = false; // Disable middle-click close
 
         // Create the main panel for displaying aircraft
-        aircraftPanel = new Panel
+        _aircraftPanel = new Panel
         {
             Dock = DockStyle.Fill,
             AutoScroll = true
@@ -46,163 +49,49 @@ public class AircraftViewer : BaseForm
         PopulateAircraftDisplay();
 
         // Add the panel to the form
-        this.Controls.Add(aircraftPanel);
+        Controls.Add(_aircraftPanel);
 
         // Initialize the TracksChanged event subscription
         Initialize();
     }
 
-    // Event handler to refresh the UI when the aircraft list changes
-    private void AircraftList_ListChanged(object? sender, ListChangedEventArgs e)
+    /// <summary>
+    /// Sets the designated aircraft.
+    /// </summary>
+    /// <param name="aircraft">The aircraft to designate.</param>
+    public void SetDesignatedAircraft(Aircraft? aircraft)
     {
-        if (InvokeRequired)
-        {
-            // If called from a different thread, invoke the UI update on the main thread
-            Invoke(new MethodInvoker(PopulateAircraftDisplay));
-        }
-        else
-        {
-            // Update the UI directly
-            PopulateAircraftDisplay();
-        }
+        _designatedAircraft = aircraft;
+
+        // Refresh the UI to reflect the change
+        PopulateAircraftDisplay();
     }
 
-    // Populates the aircraft display with UI elements
-    public void PopulateAircraftDisplay()
-    {
-        try
-        {
-            aircraftPanel.Controls.Clear(); // Clear all previous UI elements
-            int yOffset = 10; // Y-positioning for UI elements
-
-            // Display traffic pairings for each aircraft
-            foreach (var aircraft in aircraftList)
-            {
-                // Retrieve the HMI state and color for the aircraft
-                var (hmiState, color) = GetHMIStateAndColor(aircraft.Callsign);
-
-                // Create a label for the parent aircraft
-                Label parentLabel = new Label
-                {
-                    Text = aircraft.Callsign,
-                    Font = terminusFont,
-                    ForeColor = color, // Set the label color based on the HMI state
-                    Location = new Point(30, yOffset),
-                    AutoSize = true
-                };
-                aircraftPanel.Controls.Add(parentLabel);
-
-                // Create a panel to indicate designation status with a white square
-                Panel boxPanel = new Panel
-                {
-                    Size = new Size(16, 16),
-                    Location = new Point(parentLabel.Location.X - 20, parentLabel.Location.Y),
-                    BorderStyle = BorderStyle.None
-                };
-
-                // Draw the white square and fill it if the aircraft is designated
-                boxPanel.Paint += (s, e) =>
-                {
-                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    using (Pen pen = new Pen(Color.White, 3))
-                    {
-                        e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
-                    }
-
-                    if (designatedAircraft != null && designatedAircraft.Callsign == aircraft.Callsign)
-                    {
-                        using (Brush brush = new SolidBrush(Color.White))
-                        {
-                            e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
-                        }
-                    }
-                };
-
-                aircraftPanel.Controls.Add(boxPanel);
-
-                yOffset += 25;
-
-                // Display child aircraft under the parent
-                foreach (var child in aircraft.Children)
-                {
-                    Label childLabel = new Label
-                    {
-                        Text = child.Callsign,
-                        Font = terminusFont,
-                        ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255),
-                        Location = new Point(100, yOffset),
-                        AutoSize = true
-                    };
-
-                    // Set event handler for mouse actions on child labels
-                    childLabel.MouseDown += (sender, e) => ChildLabel_MouseDown(sender, e, aircraft, child);
-
-                    aircraftPanel.Controls.Add(childLabel);
-                    yOffset += 20;
-                }
-
-                yOffset += 10;
-            }
-        }
-        catch (Exception)
-        {
-            // Handle exceptions silently in release mode
-        }
-    }
-
-    // Handles clicks on child aircraft labels
-    private void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
-    {
-        try
-        {
-            if (e.Button == MouseButtons.Left)
-            {
-                // Toggle the status between "Passed" and "Unpassed"
-                child.Status = child.Status == "Passed" ? "Unpassed" : "Passed";
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                // Set the status to "Unpassed"
-                child.Status = "Unpassed";
-            }
-            else if (e.Button == MouseButtons.Middle)
-            {
-                // Remove the child from the parent's children list
-                parent.Children.Remove(child);
-
-                // If the parent has no more children, remove the parent from the aircraft list
-                if (parent.Children.Count == 0)
-                {
-                    aircraftList.Remove(parent);
-                }
-            }
-
-            // Refresh the UI to reflect the change
-            PopulateAircraftDisplay();
-        }
-        catch (Exception)
-        {
-            // Handle exceptions silently in release mode
-        }
-    }
-
-    // Ensures an aircraft exists in the list; creates it if needed
+    /// <summary>
+    /// Ensures an aircraft exists in the list; creates it if needed.
+    /// </summary>
+    /// <param name="callsign">The callsign to add.</param>
+    /// <returns>The created or retrieved aircraft.</returns>
     public Aircraft GetOrCreateAircraft(string callsign)
     {
         // Find the aircraft by callsign
-        Aircraft? aircraft = aircraftList.FirstOrDefault(a => a.Callsign == callsign);
+        Aircraft? aircraft = _aircraftList.FirstOrDefault(a => a.Callsign == callsign);
 
         if (aircraft == null)
         {
             // If the aircraft doesn't exist, create it
             aircraft = new Aircraft($"Aircraft{nextAircraftNumber++}", callsign);
-            aircraftList.Add(aircraft);
+            _aircraftList.Add(aircraft);
         }
 
         return aircraft;
     }
 
-    // Creates a traffic pairing between two aircraft
+    /// <summary>
+    /// Creates a traffic pairing between two aircraft.
+    /// </summary>
+    /// <param name="firstAircraft">The first aircraft.</param>
+    /// <param name="secondAircraft">The second aircraft.</param>
     public void CreateTrafficPairing(Aircraft firstAircraft, Aircraft secondAircraft)
     {
         if (firstAircraft == secondAircraft)
@@ -211,46 +100,65 @@ public class AircraftViewer : BaseForm
         }
 
         // Add children to reflect the traffic pairing
-        firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
-        secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
+        firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, AircraftStatus.Unpassed));
+        secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, AircraftStatus.Unpassed));
 
         // Update the traffic pairings dictionary
-        if (!trafficPairings.ContainsKey(firstAircraft))
+        if (!_trafficPairings.TryGetValue(firstAircraft, out var firstAircraftList))
         {
-            trafficPairings[firstAircraft] = new List<Aircraft>();
-        }
-        if (!trafficPairings[firstAircraft].Contains(secondAircraft))
-        {
-            trafficPairings[firstAircraft].Add(secondAircraft);
+            firstAircraftList = new List<Aircraft>();
+            _trafficPairings[firstAircraft] = firstAircraftList;
         }
 
-        if (!trafficPairings.ContainsKey(secondAircraft))
+        if (!firstAircraftList.Contains(secondAircraft))
         {
-            trafficPairings[secondAircraft] = new List<Aircraft>();
+            firstAircraftList.Add(secondAircraft);
         }
-        if (!trafficPairings[secondAircraft].Contains(firstAircraft))
+
+        if (!_trafficPairings.TryGetValue(secondAircraft, out var secondAircraftList))
         {
-            trafficPairings[secondAircraft].Add(firstAircraft);
+            secondAircraftList = new List<Aircraft>();
+            _trafficPairings[secondAircraft] = secondAircraftList;
+        }
+
+        if (!secondAircraftList.Contains(firstAircraft))
+        {
+            secondAircraftList.Add(firstAircraft);
         }
 
         // Refresh the UI to reflect the pairing
         PopulateAircraftDisplay();
     }
 
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // Unsubscribe from the ListChanged event to prevent memory leaks
+            _aircraftList.ListChanged -= AircraftList_ListChanged;
+            _terminusFont.Dispose(); // Dispose of the font resource
+            _aircraftPanel?.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
+    /// <inheritdoc/>
     protected override void OnPreviewClientMouseUp(BaseMouseEventArgs e)
     {
         if (e.Button == MouseButtons.Middle)
         {
             // Get the mouse position relative to the aircraftPanel
-            Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+            var mousePosition = _aircraftPanel.PointToClient(Cursor.Position);
 
             // Iterate through the child controls of the aircraftPanel
-            foreach (Control control in aircraftPanel.Controls)
+            foreach (Control control in _aircraftPanel.Controls)
             {
                 if (control is Label childLabel && control.Bounds.Contains(mousePosition))
                 {
                     // Find the parent and child objects associated with the label
-                    foreach (var parent in aircraftList)
+                    foreach (var parent in _aircraftList)
                     {
                         var child = parent.Children.FirstOrDefault(c => c.Callsign == childLabel.Text);
                         if (child != null)
@@ -269,29 +177,6 @@ public class AircraftViewer : BaseForm
         }
 
         base.OnPreviewClientMouseUp(e); // Call the base method for other mouse buttons
-    }
-
-    private void HandleMiddleClick(Aircraft parent, ChildAircraft child)
-    {
-        // Remove the child from the parent's children list
-        parent.Children.Remove(child);
-
-        // If the parent has no more children, remove the parent from the aircraft list
-        if (parent.Children.Count == 0)
-        {
-            aircraftList.Remove(parent);
-        }
-
-        // Refresh the UI to reflect the change
-        PopulateAircraftDisplay();
-    }
-
-    public void SetDesignatedAircraft(Aircraft? aircraft)
-    {
-        designatedAircraft = aircraft;
-
-        // Refresh the UI to reflect the change
-        PopulateAircraftDisplay();
     }
 
     private static string GetFDRState(string callsign)
@@ -387,17 +272,17 @@ public class AircraftViewer : BaseForm
             "PostJurisdiction" => Colours.Identities.PostJurisdiction,       // Suspended state maps to Preactive
             "NonJurisdiction" => Colours.Identities.NonJurisdiction,       // Suspended state maps to Preactive
             "GhostJurisdiction" => Colours.Identities.GhostJurisdiction,       // Suspended state maps to Preactive
-            _ => Colours.Identities.Default                         // Default color if no match
+            _ => Colours.Identities.Default // Default color if no match
         };
     }
 
     // Method to get the HMI state and corresponding color
-    public static (string hmiState, Color color) GetHMIStateAndColor(string callsign)
+    private static (string hmiState, Color color) GetHMIStateAndColor(string callsign)
     {
         try
         {
             // Retrieve the HMI state using the existing method
-            string hmiState = GetHMIState(callsign);
+            var hmiState = GetHMIState(callsign);
 
             if (string.IsNullOrEmpty(hmiState) || hmiState == "Unknown State")
             {
@@ -405,10 +290,10 @@ public class AircraftViewer : BaseForm
             }
 
             // Map the HMI state to a Colours.Identities value
-            Colours.Identities identity = MapHMIStateToIdentity(hmiState);
+            var identity = MapHMIStateToIdentity(hmiState);
 
             // Retrieve the color for the identity
-            Color color = Colours.GetColour(identity);
+            var color = Colours.GetColour(identity);
 
             return (hmiState, color);
         }
@@ -418,46 +303,197 @@ public class AircraftViewer : BaseForm
         }
     }
 
-    public void Initialize()
+    // Event handler to refresh the UI when the aircraft list changes
+    private void AircraftList_ListChanged(object? sender, ListChangedEventArgs e)
+    {
+        if (InvokeRequired)
+        {
+            // If called from a different thread, invoke the UI update on the main thread
+            Invoke(new MethodInvoker(PopulateAircraftDisplay));
+        }
+        else
+        {
+            // Update the UI directly
+            PopulateAircraftDisplay();
+        }
+    }
+
+    /// <summary>
+    /// Populates the aircraft display with UI elements.
+    /// </summary>
+    private void PopulateAircraftDisplay()
+    {
+        try
+        {
+            _aircraftPanel.Controls.Clear(); // Clear all previous UI elements
+            var yOffset = 10; // Y-positioning for UI elements
+
+            // Display traffic pairings for each aircraft
+            foreach (var aircraft in _aircraftList)
+            {
+                // Retrieve the HMI state and color for the aircraft
+                var (hmiState, color) = GetHMIStateAndColor(aircraft.Callsign);
+
+                // Create a label for the parent aircraft
+                var parentLabel = new Label
+                {
+                    Text = aircraft.Callsign,
+                    Font = _terminusFont,
+                    ForeColor = color, // Set the label color based on the HMI state
+                    Location = new Point(30, yOffset),
+                    AutoSize = true
+                };
+                _aircraftPanel.Controls.Add(parentLabel);
+
+                // Create a panel to indicate designation status with a white square
+                var boxPanel = new Panel
+                {
+                    Size = new Size(16, 16),
+                    Location = new Point(parentLabel.Location.X - 20, parentLabel.Location.Y),
+                    BorderStyle = BorderStyle.None
+                };
+
+                // Draw the white square and fill it if the aircraft is designated
+                boxPanel.Paint += (s, e) =>
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    using (var pen = new Pen(Color.White, 3))
+                    {
+                        e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
+                    }
+
+                    if (_designatedAircraft != null && _designatedAircraft.Callsign == aircraft.Callsign)
+                    {
+                        using (Brush brush = new SolidBrush(Color.White))
+                        {
+                            e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
+                        }
+                    }
+                };
+
+                _aircraftPanel.Controls.Add(boxPanel);
+
+                yOffset += 25;
+
+                // Display child aircraft under the parent
+                foreach (var child in aircraft.Children)
+                {
+                    var childLabel = new Label
+                    {
+                        Text = child.Callsign,
+                        Font = _terminusFont,
+                        ForeColor = child.Status == AircraftStatus.Passed ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255),
+                        Location = new Point(100, yOffset),
+                        AutoSize = true
+                    };
+
+                    // Set event handler for mouse actions on child labels
+                    childLabel.MouseDown += (sender, e) => ChildLabel_MouseDown(sender, e, aircraft, child);
+
+                    _aircraftPanel.Controls.Add(childLabel);
+                    yOffset += 20;
+                }
+
+                yOffset += 10;
+            }
+        }
+        catch (Exception)
+        {
+            // Handle exceptions silently in release mode
+        }
+    }
+
+    // Handles clicks on child aircraft labels
+    private void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
+    {
+        try
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                // Toggle the status between "Passed" and "Unpassed"
+                child.Status = child.Status == AircraftStatus.Passed ? AircraftStatus.Unpassed : AircraftStatus.Passed;
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                // Set the status to "Unpassed"
+                child.Status = AircraftStatus.Unpassed;
+            }
+            else if (e.Button == MouseButtons.Middle)
+            {
+                // Remove the child from the parent's children list
+                parent.Children.Remove(child);
+
+                // If the parent has no more children, remove the parent from the aircraft list
+                if (parent.Children.Count == 0)
+                {
+                    _aircraftList.Remove(parent);
+                }
+            }
+
+            // Refresh the UI to reflect the change
+            PopulateAircraftDisplay();
+        }
+        catch (Exception)
+        {
+            // Handle exceptions silently in release mode
+        }
+    }
+
+    private void HandleMiddleClick(Aircraft parent, ChildAircraft child)
+    {
+        // Remove the child from the parent's children list
+        parent.Children.Remove(child);
+
+        // If the parent has no more children, remove the parent from the aircraft list
+        if (parent.Children.Count == 0)
+        {
+            _aircraftList.Remove(parent);
+        }
+
+        // Refresh the UI to reflect the change
+        PopulateAircraftDisplay();
+    }
+
+    private void Initialize()
     {
         try
         {
             // Get the TracksChanged event using reflection
-            EventInfo tracksChangedEvent = typeof(MMI).GetEvent("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
+            var tracksChangedEvent = typeof(MMI).GetEvent("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
             if (tracksChangedEvent == null)
             {
                 return;
             }
 
             // Get the backing field for the TracksChanged event
-            FieldInfo? eventField = typeof(MMI).GetField("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
+            var eventField = typeof(MMI).GetField("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
             if (eventField == null)
             {
                 return;
             }
 
             // Get the current value of the event (the delegate)
-            Delegate? currentDelegate = eventField.GetValue(null) as Delegate;
+            var currentDelegate = eventField.GetValue(null) as Delegate;
 
             // Create a delegate for the OnTracksChanged method
-            MethodInfo onTracksChangedMethod = typeof(AircraftViewer).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+            var onTracksChangedMethod = typeof(AircraftViewer).GetMethod(nameof(OnTracksChanged), BindingFlags.Instance | BindingFlags.NonPublic);
             if (onTracksChangedMethod == null)
             {
                 return;
             }
 
             // Get the event handler type (EventHandler<TracksChangedEventArgs>)
-            Type? eventHandlerType = tracksChangedEvent.EventHandlerType;
+            var eventHandlerType = tracksChangedEvent.EventHandlerType;
             if (eventHandlerType == null)
             {
                 return;
             }
 
             // Create a delegate of the correct type for the event handler
-            Delegate newDelegate = Delegate.CreateDelegate(eventHandlerType, this, onTracksChangedMethod);
+            var newDelegate = Delegate.CreateDelegate(eventHandlerType, this, onTracksChangedMethod);
 
             // Combine the new delegate with the existing delegate
-            Delegate? combinedDelegate = Delegate.Combine(currentDelegate, newDelegate);
+            var combinedDelegate = Delegate.Combine(currentDelegate, newDelegate);
 
             // Set the combined delegate back to the event field
             eventField.SetValue(null, combinedDelegate);
@@ -483,7 +519,7 @@ public class AircraftViewer : BaseForm
 
                 // Access the 'Removed' property
                 var removedProperty = tracksChangedEventArgsType.GetProperty("Removed", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                bool removed = removedProperty != null && (bool)removedProperty.GetValue(e);
+                var removed = removedProperty != null && (bool)removedProperty.GetValue(e);
             }
 
             // Refresh the aircraft display
