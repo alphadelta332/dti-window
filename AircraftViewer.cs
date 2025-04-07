@@ -131,11 +131,13 @@ public class AircraftViewer : BaseForm
                         Font = terminusFont,
                         ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255),
                         Location = new Point(100, yOffset),
-                        AutoSize = true
+                        AutoSize = true,
+                        BackColor = Color.Transparent // Ensure the default background is transparent
                     };
 
-                    // Set event handler for mouse actions on child labels
+                    // Set event handlers for mouse actions on child labels
                     childLabel.MouseDown += (sender, e) => ChildLabel_MouseDown(sender, e, aircraft, child);
+                    childLabel.MouseUp += (sender, e) => ChildLabel_MouseUp(sender, e, aircraft, child);
 
                     aircraftPanel.Controls.Add(childLabel);
                     yOffset += 20;
@@ -150,39 +152,56 @@ public class AircraftViewer : BaseForm
         }
     }
 
-    // Handles clicks on child aircraft labels
+    // Handles mouse down on child aircraft labels
     private void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
     {
-        try
+        if (sender is Label childLabel)
         {
-            if (e.Button == MouseButtons.Left)
-            {
-                // Toggle the status between "Passed" and "Unpassed"
-                child.Status = child.Status == "Passed" ? "Unpassed" : "Passed";
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                // Set the status to "Unpassed"
-                child.Status = "Unpassed";
-            }
-            else if (e.Button == MouseButtons.Middle)
-            {
-                // Remove the child from the parent's children list
-                parent.Children.Remove(child);
-
-                // If the parent has no more children, remove the parent from the aircraft list
-                if (parent.Children.Count == 0)
-                {
-                    aircraftList.Remove(parent);
-                }
-            }
-
-            // Refresh the UI to reflect the change
-            PopulateAircraftDisplay();
+            // Highlight the background while the mouse button is held
+            childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText); // Use the window title text color
         }
-        catch (Exception)
+    }
+
+    // Handles mouse up on child aircraft labels
+    private void ChildLabel_MouseUp(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
+    {
+        if (sender is Label childLabel)
         {
-            // Handle exceptions silently in release mode
+            // Reset the background color when the mouse button is released
+            childLabel.BackColor = Color.Transparent;
+
+            // Perform the action based on the mouse button released
+            try
+            {
+                if (e.Button == MouseButtons.Left)
+                {
+                    // Set the status to "Passed"
+                    child.Status = "Passed";
+                }
+                else if (e.Button == MouseButtons.Right)
+                {
+                    // Set the status to "Unpassed"
+                    child.Status = "Unpassed";
+                }
+                else if (e.Button == MouseButtons.Middle)
+                {
+                    // Remove the child from the parent's children list
+                    parent.Children.Remove(child);
+
+                    // If the parent has no more children, remove the parent from the aircraft list
+                    if (parent.Children.Count == 0)
+                    {
+                        aircraftList.Remove(parent);
+                    }
+                }
+
+                // Refresh the UI to reflect the change
+                PopulateAircraftDisplay();
+            }
+            catch (Exception)
+            {
+                // Handle exceptions silently in release mode
+            }
         }
     }
 
@@ -233,7 +252,13 @@ public class AircraftViewer : BaseForm
             trafficPairings[secondAircraft].Add(firstAircraft);
         }
 
-        // Refresh the UI to reflect the pairing
+        // Ensure the designated aircraft is set (if not already set)
+        if (designatedAircraft == null)
+        {
+            designatedAircraft = firstAircraft; // Default to the first aircraft in the pairing
+        }
+
+        // Refresh the UI to reflect the pairing and designation
         PopulateAircraftDisplay();
     }
 
