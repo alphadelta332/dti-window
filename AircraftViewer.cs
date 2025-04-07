@@ -252,7 +252,13 @@ public class AircraftViewer : BaseForm
             trafficPairings[secondAircraft].Add(firstAircraft);
         }
 
-        // Refresh the UI to reflect the pairing
+        // Ensure the designated aircraft is set (if not already set)
+        if (designatedAircraft == null)
+        {
+            designatedAircraft = firstAircraft; // Default to the first aircraft in the pairing
+        }
+
+        // Refresh the UI to reflect the pairing and designation
         PopulateAircraftDisplay();
     }
 
