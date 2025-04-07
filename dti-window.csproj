@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-	<OutputPath>C:\vatSys\bin\Plugins\DTIWindow</OutputPath>
+	<OutputPath>C:\vatSys\bin\Plugins\dti-Window</OutputPath>
 	<Platforms>AnyCPU</Platforms>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
