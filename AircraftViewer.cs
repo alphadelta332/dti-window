@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using System.Reflection;
 using System.IO;
 using System.Linq;
+using System.Diagnostics;
 using vatsys;
 using System.Collections.Concurrent; // For thread-safe collections
 
@@ -157,6 +158,9 @@ public class AircraftViewer : BaseForm
     {
         if (sender is Label childLabel)
         {
+            // Log the mouse button and event type
+            Debug.WriteLine($"MouseDown: Button={e.Button}, Label={childLabel.Text}");
+
             // Highlight the background while the mouse button is held
             childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText); // Use the window title text color
         }
@@ -167,6 +171,9 @@ public class AircraftViewer : BaseForm
     {
         if (sender is Label childLabel)
         {
+            // Log the mouse button and event type
+            Debug.WriteLine($"MouseUp: Button={e.Button}, Label={childLabel.Text}");
+
             // Reset the background color when the mouse button is released
             childLabel.BackColor = Color.Transparent;
 
@@ -198,9 +205,9 @@ public class AircraftViewer : BaseForm
                 // Refresh the UI to reflect the change
                 PopulateAircraftDisplay();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Handle exceptions silently in release mode
+                Debug.WriteLine($"Error in MouseUp: {ex.Message}");
             }
         }
     }
@@ -518,5 +525,77 @@ public class AircraftViewer : BaseForm
         {
             // Handle exceptions silently in release mode
         }
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        const int WM_PARENTNOTIFY = 0x0210; // Parent notify message
+        const int WM_MBUTTONDOWN = 0x0207; // Middle mouse button down
+        const int WM_MBUTTONUP = 0x0208;   // Middle mouse button up
+
+        // Check if the message is WM_PARENTNOTIFY
+        if (m.Msg == WM_PARENTNOTIFY)
+        {
+            int lowWord = m.WParam.ToInt32() & 0xFFFF; // Extract the low word of wParam
+            if (lowWord == WM_MBUTTONDOWN)
+            {
+                // Log the middle mouse button down event
+                Debug.WriteLine("WndProc: WM_PARENTNOTIFY - Middle Mouse Down Detected");
+
+                // Get the mouse position relative to the aircraftPanel
+                Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+
+                // Check if the mouse is over a child label
+                foreach (Control control in aircraftPanel.Controls)
+                {
+                    if (control is Label childLabel && childLabel.Bounds.Contains(mousePosition))
+                    {
+                        // Highlight the label background
+                        childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText);
+                        return; // Prevent further processing
+                    }
+                }
+            }
+        }
+
+        // Check for WM_MBUTTONUP
+        if (m.Msg == WM_MBUTTONUP)
+        {
+            // Log the middle mouse button up event
+            Debug.WriteLine("WndProc: Middle Mouse Up Detected");
+
+            // Get the mouse position relative to the aircraftPanel
+            Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+
+            // Check if the mouse is over a child label
+            foreach (Control control in aircraftPanel.Controls)
+            {
+                if (control is Label childLabel && childLabel.Bounds.Contains(mousePosition))
+                {
+                    // Reset the label background
+                    childLabel.BackColor = Color.Transparent;
+
+                    // Perform the action
+                    foreach (var parent in aircraftList)
+                    {
+                        var child = parent.Children.FirstOrDefault(c => c.Callsign == childLabel.Text);
+                        if (child != null)
+                        {
+                            parent.Children.Remove(child);
+                            if (parent.Children.Count == 0)
+                            {
+                                aircraftList.Remove(parent);
+                            }
+                            PopulateAircraftDisplay();
+                            break;
+                        }
+                    }
+                    return; // Prevent further processing
+                }
+            }
+        }
+
+        // Call the base method for other messages
+        base.WndProc(ref m);
     }
 }
