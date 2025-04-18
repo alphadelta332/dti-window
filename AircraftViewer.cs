@@ -163,6 +163,9 @@ public class AircraftViewer : BaseForm
 
             // Highlight the background while the mouse button is held
             childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText); // Use the window title text color
+
+            // Change the text color to white
+            childLabel.ForeColor = Color.White;
         }
     }
 
@@ -552,6 +555,10 @@ public class AircraftViewer : BaseForm
                     {
                         // Highlight the label background
                         childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText);
+
+                        // Change the text color to white
+                        childLabel.ForeColor = Color.White;
+
                         return; // Prevent further processing
                     }
                 }
@@ -574,6 +581,15 @@ public class AircraftViewer : BaseForm
                 {
                     // Reset the label background
                     childLabel.BackColor = Color.Transparent;
+
+                    // Reset the text color to its original state
+                    var associatedChild = aircraftList
+                        .SelectMany(parent => parent.Children)
+                        .FirstOrDefault(c => c.Callsign == childLabel.Text);
+
+                    childLabel.ForeColor = associatedChild != null && associatedChild.Status == "Passed" 
+                        ? Color.FromArgb(0, 0, 188) 
+                        : Color.FromArgb(255, 255, 255);
 
                     // Perform the action
                     foreach (var parent in aircraftList)
