@@ -1,14 +1,7 @@
-using System;
-using System.ComponentModel;
-using System.Drawing;
-using System.Drawing.Text;
-using System.Runtime.Versioning;
-using System.Windows.Forms;
-using System.Reflection;
-using System.IO;
-using System.Linq;
-using vatsys;
 using System.Collections.Concurrent; // For thread-safe collections
+using System.ComponentModel;
+using System.Reflection;
+using vatsys;
 
 // Represents the AircraftViewer form, which displays and manages aircraft and their traffic pairings
 public class AircraftViewer : BaseForm
@@ -19,6 +12,7 @@ public class AircraftViewer : BaseForm
     private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
     private Aircraft? designatedAircraft = null; // Currently designated aircraft
     private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
+    private Label? activeChildLabel = null; // Tracks the currently active child label
 
     // Constructor for the AircraftViewer form
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
@@ -159,6 +153,15 @@ public class AircraftViewer : BaseForm
         {
             // Highlight the background while the mouse button is held
             childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText); // Use the window title text color
+
+            // Change the text color to white
+            childLabel.ForeColor = Color.White;
+
+            // Track the active child label
+            activeChildLabel = childLabel;
+
+            // Capture mouse input
+            childLabel.Capture = true;
         }
     }
 
@@ -167,6 +170,9 @@ public class AircraftViewer : BaseForm
     {
         if (sender is Label childLabel)
         {
+            // Release mouse input
+            childLabel.Capture = false;
+
             // Reset the background color when the mouse button is released
             childLabel.BackColor = Color.Transparent;
 
@@ -201,6 +207,10 @@ public class AircraftViewer : BaseForm
             catch (Exception)
             {
                 // Handle exceptions silently in release mode
+            }
+            finally
+            {
+                activeChildLabel = null;
             }
         }
     }
@@ -518,5 +528,98 @@ public class AircraftViewer : BaseForm
         {
             // Handle exceptions silently in release mode
         }
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        const int WM_PARENTNOTIFY = 0x0210; // Parent notify message
+        const int WM_MBUTTONDOWN = 0x0207; // Middle mouse button down
+        const int WM_MBUTTONUP = 0x0208;   // Middle mouse button up
+
+        // Check if the message is WM_PARENTNOTIFY
+        if (m.Msg == WM_PARENTNOTIFY)
+        {
+            int lowWord = m.WParam.ToInt32() & 0xFFFF; // Extract the low word of wParam
+
+            if (lowWord == WM_MBUTTONDOWN)
+            {
+                // Capture mouse input
+                this.Capture = true;
+
+                // Get the mouse position relative to the aircraftPanel
+                Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+
+                // Check if the mouse is over a child label
+                foreach (Control control in aircraftPanel.Controls)
+                {
+                    if (control is Label childLabel && childLabel.Bounds.Contains(mousePosition))
+                    {
+                        // Highlight the label background
+                        childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText);
+
+                        // Change the text color to white
+                        childLabel.ForeColor = Color.White;
+
+                        // Track the active child label
+                        activeChildLabel = childLabel;
+
+                        return; // Prevent further processing
+                    }
+                }
+
+                // If no label is found, clear the active child label
+                activeChildLabel = null;
+            }
+        }
+
+        // Check for WM_MBUTTONUP
+        if (m.Msg == WM_MBUTTONUP)
+        {
+            // Release mouse input
+            this.Capture = false;
+
+            // Use the active child label if it exists
+            if (activeChildLabel != null)
+            {
+                // Reset the label background
+                activeChildLabel.BackColor = Color.Transparent;
+
+                // Reset the text color to its original state
+                var associatedChild = aircraftList
+                    .SelectMany(parent => parent.Children)
+                    .FirstOrDefault(c => c.Callsign == activeChildLabel.Text);
+
+                if (associatedChild != null)
+                {
+                    activeChildLabel.ForeColor = associatedChild.Status == "Passed"
+                        ? Color.FromArgb(0, 0, 188)
+                        : Color.FromArgb(255, 255, 255);
+
+                    // Perform the action
+                    foreach (var parent in aircraftList)
+                    {
+                        var child = parent.Children.FirstOrDefault(c => c.Callsign == activeChildLabel.Text);
+                        if (child != null)
+                        {
+                            parent.Children.Remove(child);
+                            if (parent.Children.Count == 0)
+                            {
+                                aircraftList.Remove(parent);
+                            }
+                            PopulateAircraftDisplay();
+                            break;
+                        }
+                    }
+                }
+
+                // Clear the active child label
+                activeChildLabel = null;
+
+                return; // Prevent further processing
+            }
+        }
+
+        // Call the base method for other messages
+        base.WndProc(ref m);
     }
 }
