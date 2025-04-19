@@ -1,18 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
-using vatsys.Plugin;
-using vatsys;
+﻿using System.ComponentModel;
 using System.ComponentModel.Composition;
-using System.Windows.Input;
-using System.Windows.Interop;
-using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using vatsys;
+using vatsys.Plugin;
 
 // Represents a child aircraft in the system
 public class ChildAircraft
@@ -70,7 +61,7 @@ public class DTIWindow : Form, IPlugin
     private Track? PreviousSelectedTrack; // Stores the previously selected radar track
 
     private AircraftViewer? Window; // Reference to the DTI Window form
-    
+
     private readonly CustomToolStripMenuItem _opener; // Menu button for opening the DTI Window
 
     private BindingList<Aircraft> AircraftList = new(); // List of all parent aircraft
