@@ -20,6 +20,7 @@ public class AircraftViewer : BaseForm
     private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
     private Aircraft? designatedAircraft = null; // Currently designated aircraft
     private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
+    private Label? activeChildLabel = null; // Tracks the currently active child label
 
     // Constructor for the AircraftViewer form
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
@@ -166,19 +167,34 @@ public class AircraftViewer : BaseForm
 
             // Change the text color to white
             childLabel.ForeColor = Color.White;
+
+            // Track the active child label
+            activeChildLabel = childLabel;
+            Debug.WriteLine($"activeChildLabel set to: {activeChildLabel.Text}");
+
+            // Capture mouse input
+            childLabel.Capture = true;
+            Debug.WriteLine("Mouse input captured.");
         }
     }
 
     // Handles mouse up on child aircraft labels
     private void ChildLabel_MouseUp(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
     {
-        if (sender is Label childLabel)
+        // Use the activeChildLabel if it exists
+        Label? targetLabel = activeChildLabel ?? sender as Label;
+
+        if (targetLabel != null)
         {
             // Log the mouse button and event type
-            Debug.WriteLine($"MouseUp: Button={e.Button}, Label={childLabel.Text}");
+            Debug.WriteLine($"MouseUp: Button={e.Button}, Label={targetLabel.Text}");
+
+            // Release mouse input
+            targetLabel.Capture = false;
+            Debug.WriteLine("Mouse input released.");
 
             // Reset the background color when the mouse button is released
-            childLabel.BackColor = Color.Transparent;
+            targetLabel.BackColor = Color.Transparent;
 
             // Perform the action based on the mouse button released
             try
@@ -195,6 +211,9 @@ public class AircraftViewer : BaseForm
                 }
                 else if (e.Button == MouseButtons.Middle)
                 {
+                    // Log the middle click action
+                    Debug.WriteLine($"Middle click detected on: {targetLabel.Text}");
+
                     // Remove the child from the parent's children list
                     parent.Children.Remove(child);
 
@@ -212,6 +231,16 @@ public class AircraftViewer : BaseForm
             {
                 Debug.WriteLine($"Error in MouseUp: {ex.Message}");
             }
+            finally
+            {
+                // Clear the active child label
+                Debug.WriteLine($"Clearing activeChildLabel (was: {activeChildLabel?.Text})");
+                activeChildLabel = null;
+            }
+        }
+        else
+        {
+            Debug.WriteLine("MouseUp: No targetLabel found.");
         }
     }
 
@@ -532,6 +561,9 @@ public class AircraftViewer : BaseForm
 
     protected override void WndProc(ref Message m)
     {
+        // Add this line at the very beginning of WndProc
+        Debug.WriteLine($"WndProc: Msg={m.Msg}, WParam={m.WParam}, LParam={m.LParam}");
+
         const int WM_PARENTNOTIFY = 0x0210; // Parent notify message
         const int WM_MBUTTONDOWN = 0x0207; // Middle mouse button down
         const int WM_MBUTTONUP = 0x0208;   // Middle mouse button up
@@ -540,10 +572,14 @@ public class AircraftViewer : BaseForm
         if (m.Msg == WM_PARENTNOTIFY)
         {
             int lowWord = m.WParam.ToInt32() & 0xFFFF; // Extract the low word of wParam
+
             if (lowWord == WM_MBUTTONDOWN)
             {
-                // Log the middle mouse button down event
                 Debug.WriteLine("WndProc: WM_PARENTNOTIFY - Middle Mouse Down Detected");
+
+                // Capture mouse input
+                this.Capture = true;
+                Debug.WriteLine("Mouse input captured.");
 
                 // Get the mouse position relative to the aircraftPanel
                 Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
@@ -559,42 +595,61 @@ public class AircraftViewer : BaseForm
                         // Change the text color to white
                         childLabel.ForeColor = Color.White;
 
+                        // Track the active child label
+                        activeChildLabel = childLabel;
+                        Debug.WriteLine($"WndProc: activeChildLabel set to: {activeChildLabel.Text}");
+
                         return; // Prevent further processing
                     }
                 }
+
+                // If no label is found, clear the active child label
+                Debug.WriteLine("WndProc: No label found under mouse. Clearing activeChildLabel.");
+                activeChildLabel = null;
             }
         }
 
         // Check for WM_MBUTTONUP
         if (m.Msg == WM_MBUTTONUP)
         {
-            // Log the middle mouse button up event
-            Debug.WriteLine("WndProc: Middle Mouse Up Detected");
+            Debug.WriteLine("WndProc: WM_MBUTTONUP detected at the form level.");
 
-            // Get the mouse position relative to the aircraftPanel
-            Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+            // Perform any necessary actions here
+            // ...existing code for handling activeChildLabel...
+        }
 
-            // Check if the mouse is over a child label
-            foreach (Control control in aircraftPanel.Controls)
+        // Check for WM_MBUTTONUP
+        if (m.Msg == WM_MBUTTONUP)
+        {
+            Debug.WriteLine("WndProc: WM_MBUTTONUP - Middle Mouse Up Detected");
+
+            // Release mouse input
+            this.Capture = false;
+            Debug.WriteLine("Mouse input released.");
+
+            // Use the active child label if it exists
+            if (activeChildLabel != null)
             {
-                if (control is Label childLabel && childLabel.Bounds.Contains(mousePosition))
+                Debug.WriteLine($"WndProc: Using activeChildLabel: {activeChildLabel.Text}");
+
+                // Reset the label background
+                activeChildLabel.BackColor = Color.Transparent;
+
+                // Reset the text color to its original state
+                var associatedChild = aircraftList
+                    .SelectMany(parent => parent.Children)
+                    .FirstOrDefault(c => c.Callsign == activeChildLabel.Text);
+
+                if (associatedChild != null)
                 {
-                    // Reset the label background
-                    childLabel.BackColor = Color.Transparent;
-
-                    // Reset the text color to its original state
-                    var associatedChild = aircraftList
-                        .SelectMany(parent => parent.Children)
-                        .FirstOrDefault(c => c.Callsign == childLabel.Text);
-
-                    childLabel.ForeColor = associatedChild != null && associatedChild.Status == "Passed" 
-                        ? Color.FromArgb(0, 0, 188) 
+                    activeChildLabel.ForeColor = associatedChild.Status == "Passed"
+                        ? Color.FromArgb(0, 0, 188)
                         : Color.FromArgb(255, 255, 255);
 
                     // Perform the action
                     foreach (var parent in aircraftList)
                     {
-                        var child = parent.Children.FirstOrDefault(c => c.Callsign == childLabel.Text);
+                        var child = parent.Children.FirstOrDefault(c => c.Callsign == activeChildLabel.Text);
                         if (child != null)
                         {
                             parent.Children.Remove(child);
@@ -606,8 +661,21 @@ public class AircraftViewer : BaseForm
                             break;
                         }
                     }
-                    return; // Prevent further processing
                 }
+                else
+                {
+                    Debug.WriteLine("WndProc: No associated child found for activeChildLabel.");
+                }
+
+                // Clear the active child label
+                Debug.WriteLine($"WndProc: Clearing activeChildLabel (was: {activeChildLabel.Text})");
+                activeChildLabel = null;
+
+                return; // Prevent further processing
+            }
+            else
+            {
+                Debug.WriteLine("WndProc: No activeChildLabel to process on WM_MBUTTONUP.");
             }
         }
 
