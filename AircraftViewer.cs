@@ -12,6 +12,7 @@ public class AircraftViewer : BaseForm
     private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
     private Aircraft? designatedAircraft = null; // Currently designated aircraft
     private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
+    private Label? activeChildLabel = null; // Tracks the currently active child label
 
     // Constructor for the AircraftViewer form
     public AircraftViewer(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
@@ -170,7 +171,7 @@ public class AircraftViewer : BaseForm
         if (sender is Label childLabel)
         {
             // Release mouse input
-            targetLabel.Capture = false;
+            childLabel.Capture = false;
 
             // Reset the background color when the mouse button is released
             childLabel.BackColor = Color.Transparent;
@@ -204,9 +205,8 @@ public class AircraftViewer : BaseForm
                 PopulateAircraftDisplay();
             }
             catch (Exception)
-            catch (Exception)
             {
-
+                // Handle exceptions silently in release mode
             }
             finally
             {
