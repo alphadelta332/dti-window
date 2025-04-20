@@ -54,7 +54,7 @@ public class Aircraft
 
 // Main plugin class for the DTI Window
 [Export(typeof(IPlugin))]
-public class DTIWindow : Form, IPlugin
+public class DTIWindowPlugin : Form, IPlugin
 {
     private static bool KeybindPressed; // Tracks if the F7 key is currently pressed
 
@@ -114,7 +114,7 @@ public class DTIWindow : Form, IPlugin
     public new string Name => "DTI Window"; // Plugin name
 
     // Constructor for the DTIWindow plugin
-    public DTIWindow()
+    public DTIWindowPlugin()
     {
         // Initialize the menu bar button for the plugin
         _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("Traffic Info"));

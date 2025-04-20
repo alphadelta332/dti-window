@@ -1,7 +1,9 @@
 using System.Collections.Concurrent; // For thread-safe collections
 using System.ComponentModel;
 using System.Reflection;
+using DTIWindow.UI;
 using vatsys;
+using UIColours = DTIWindow.UI.Colours;
 
 // Represents the AircraftViewer form, which displays and manages aircraft and their traffic pairings
 public class AircraftViewer : BaseForm
@@ -27,7 +29,7 @@ public class AircraftViewer : BaseForm
         this.Text = "Traffic Info";
         this.Width = 200;
         this.Height = 350;
-        this.BackColor = Colours.GetColour(Colours.Identities.WindowBackground);
+        this.BackColor = UIColours.GetColour(UIColours.Identities.WindowBackground); // Updated
 
         // Create the main panel for displaying aircraft
         aircraftPanel = new Panel
@@ -80,7 +82,7 @@ public class AircraftViewer : BaseForm
                 {
                     Text = aircraft.Callsign,
                     Font = terminusFont,
-                    ForeColor = color, // Set the label color based on the HMI state
+                    ForeColor = color, // Updated
                     Location = new Point(30, yOffset),
                     AutoSize = true
                 };
@@ -98,14 +100,14 @@ public class AircraftViewer : BaseForm
                 boxPanel.Paint += (s, e) =>
                 {
                     e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    using (Pen pen = new Pen(Color.White, 3))
+                    using (Pen pen = new Pen(UIColours.GetColour(UIColours.Identities.DesignationBox), 3)) // Updated
                     {
                         e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
                     }
 
                     if (designatedAircraft != null && designatedAircraft.Callsign == aircraft.Callsign)
                     {
-                        using (Brush brush = new SolidBrush(Color.White))
+                        using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox))) // Updated
                         {
                             e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
                         }
@@ -123,10 +125,12 @@ public class AircraftViewer : BaseForm
                     {
                         Text = child.Callsign,
                         Font = terminusFont,
-                        ForeColor = child.Status == "Passed" ? Color.FromArgb(0, 0, 188) : Color.FromArgb(255, 255, 255),
+                        ForeColor = child.Status == "Passed"
+                            ? UIColours.GetColour(UIColours.Identities.ChildLabelPassedText) // Updated
+                            : UIColours.GetColour(UIColours.Identities.ChildLabelUnpassedText), // Updated
                         Location = new Point(100, yOffset),
                         AutoSize = true,
-                        BackColor = Color.Transparent // Ensure the default background is transparent
+                        BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground) // Updated
                     };
 
                     // Set event handlers for mouse actions on child labels
@@ -152,10 +156,10 @@ public class AircraftViewer : BaseForm
         if (sender is Label childLabel)
         {
             // Highlight the background while the mouse button is held
-            childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText); // Use the window title text color
+            childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick); // Updated
 
             // Change the text color to white
-            childLabel.ForeColor = Color.White;
+            childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick); // Updated
 
             // Track the active child label
             activeChildLabel = childLabel;
@@ -174,7 +178,7 @@ public class AircraftViewer : BaseForm
             childLabel.Capture = false;
 
             // Reset the background color when the mouse button is released
-            childLabel.BackColor = Color.Transparent;
+            childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground); // Updated
 
             // Perform the action based on the mouse button released
             try
@@ -409,23 +413,6 @@ public class AircraftViewer : BaseForm
         }
     }
 
-    // Map HMI states to Colours.Identities
-    private static Colours.Identities MapHMIStateToIdentity(string hmiState)
-    {
-        return hmiState switch
-        {
-            "Jurisdiction" => Colours.Identities.Jurisdiction,       // Active state maps to Jurisdiction
-            "HandoverOut" => Colours.Identities.Jurisdiction,       // Active state maps to Jurisdiction
-            "Announced" => Colours.Identities.Announced,        // Inactive state maps to Announced
-            "HandoverIn" => Colours.Identities.Announced,        // Inactive state maps to Announced
-            "Preactive" => Colours.Identities.Preactive,       // Suspended state maps to Preactive
-            "PostJurisdiction" => Colours.Identities.PostJurisdiction,       // Suspended state maps to Preactive
-            "NonJurisdiction" => Colours.Identities.NonJurisdiction,       // Suspended state maps to Preactive
-            "GhostJurisdiction" => Colours.Identities.GhostJurisdiction,       // Suspended state maps to Preactive
-            _ => Colours.Identities.Default                         // Default color if no match
-        };
-    }
-
     // Method to get the HMI state and corresponding color
     public static (string hmiState, Color color) GetHMIStateAndColor(string callsign)
     {
@@ -434,22 +421,13 @@ public class AircraftViewer : BaseForm
             // Retrieve the HMI state using the existing method
             string hmiState = GetHMIState(callsign);
 
-            if (string.IsNullOrEmpty(hmiState) || hmiState == "Unknown State")
-            {
-                return ("Unknown State", Color.Gray); // Return a default color for unknown states
-            }
-
-            // Map the HMI state to a Colours.Identities value
-            Colours.Identities identity = MapHMIStateToIdentity(hmiState);
-
-            // Retrieve the color for the identity
-            Color color = Colours.GetColour(identity);
-
-            return (hmiState, color);
+            // Delegate both the state and color logic to the Colours class
+            return UIColours.GetHMIStateAndColor(hmiState);
         }
-        catch (Exception)
+        catch
         {
-            return ("Error", Color.Red); // Return a default error color
+            // Let the Colours class handle exceptions and return default values
+            return UIColours.GetHMIStateAndColor(string.Empty);
         }
     }
 
@@ -555,10 +533,10 @@ public class AircraftViewer : BaseForm
                     if (control is Label childLabel && childLabel.Bounds.Contains(mousePosition))
                     {
                         // Highlight the label background
-                        childLabel.BackColor = Colours.GetColour(Colours.Identities.GenericText);
+                        childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick);
 
                         // Change the text color to white
-                        childLabel.ForeColor = Color.White;
+                        childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick);
 
                         // Track the active child label
                         activeChildLabel = childLabel;
@@ -582,7 +560,7 @@ public class AircraftViewer : BaseForm
             if (activeChildLabel != null)
             {
                 // Reset the label background
-                activeChildLabel.BackColor = Color.Transparent;
+                activeChildLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
 
                 // Reset the text color to its original state
                 var associatedChild = aircraftList
@@ -592,8 +570,8 @@ public class AircraftViewer : BaseForm
                 if (associatedChild != null)
                 {
                     activeChildLabel.ForeColor = associatedChild.Status == "Passed"
-                        ? Color.FromArgb(0, 0, 188)
-                        : Color.FromArgb(255, 255, 255);
+                        ? UIColours.GetColour(UIColours.Identities.ChildLabelPassedText)
+                        : UIColours.GetColour(UIColours.Identities.ChildLabelUnpassedText);
 
                     // Perform the action
                     foreach (var parent in aircraftList)
