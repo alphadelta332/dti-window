@@ -154,58 +154,18 @@ public class AircraftViewer : BaseForm
     {
         if (sender is Label childLabel)
         {
-            // Highlight the background while the mouse button is held
-            childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick); // Updated
-
-            // Change the text color to white
-            childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick); // Updated
-
-            // Track the active child label
-            activeChildLabel = childLabel;
-
-            // Capture mouse input
-            childLabel.Capture = true;
+            // Delegate the mouse down logic to the ChildrenEvents class
+            ChildrenEvents.HandleMouseDown(childLabel, ref activeChildLabel);
         }
     }
 
     // Handles mouse up on child aircraft labels
     private void ChildLabel_MouseUp(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
     {
-        if (sender is Label childLabel)
+         if (sender is Label childLabel)
         {
-            // Release mouse input
-            childLabel.Capture = false;
-
-            // Reset the background color when the mouse button is released
-            childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground); // Updated
-
-            // Perform the action based on the mouse button released
-            try
-            {
-                if (e.Button == MouseButtons.Left)
-                {
-                    ChildrenEvents.HandleLeftClick(child);
-                }
-                else if (e.Button == MouseButtons.Right)
-                {
-                    ChildrenEvents.HandleRightClick(child);
-                }
-                else if (e.Button == MouseButtons.Middle)
-                {
-                    ChildrenEvents.HandleMiddleClick(parent, child, aircraftList);
-                }
-
-                // Refresh the UI to reflect the change
-                PopulateAircraftDisplay();
-            }
-            catch (Exception)
-            {
-                // Handle exceptions silently in release mode
-            }
-            finally
-            {
-                activeChildLabel = null;
-            }
+            // Delegate the mouse up logic to the ChildrenEvents class
+            ChildrenEvents.HandleMouseUp(childLabel, e, parent, child, aircraftList, PopulateAircraftDisplay);
         }
     }
 
