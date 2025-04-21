@@ -1,11 +1,10 @@
-using System.Collections.Concurrent; // For thread-safe collections
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using DTIWindow.UI;
+using DTIWindow.Events;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
-
-// Represents the AircraftViewer form, which displays and manages aircraft and their traffic pairings
 public class AircraftViewer : BaseForm
 {
     private Panel aircraftPanel; // UI panel to display the list of aircraft
@@ -185,24 +184,15 @@ public class AircraftViewer : BaseForm
             {
                 if (e.Button == MouseButtons.Left)
                 {
-                    // Set the status to "Passed"
-                    child.Status = "Passed";
+                    ChildrenEvents.HandleLeftClick(child);
                 }
                 else if (e.Button == MouseButtons.Right)
                 {
-                    // Set the status to "Unpassed"
-                    child.Status = "Unpassed";
+                    ChildrenEvents.HandleRightClick(child);
                 }
                 else if (e.Button == MouseButtons.Middle)
                 {
-                    // Remove the child from the parent's children list
-                    parent.Children.Remove(child);
-
-                    // If the parent has no more children, remove the parent from the aircraft list
-                    if (parent.Children.Count == 0)
-                    {
-                        aircraftList.Remove(parent);
-                    }
+                    ChildrenEvents.HandleMiddleClick(parent, child, aircraftList);
                 }
 
                 // Refresh the UI to reflect the change
