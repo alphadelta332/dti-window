@@ -1,6 +1,5 @@
 
 using System.Runtime.InteropServices;
-using System.ServiceModel.MsmqIntegration;
 using DTIWindow.Aircraft;
 using vatsys;
 
@@ -105,7 +104,7 @@ namespace DTIWindow.MMI
                 // Check if the selected track corresponds to a parent aircraft
                 if (track != null)
                 {
-                    var parentAircraft = DTIWindow.Aircraft.Aircraft.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign);
+                    var parentAircraft = AircraftManager.Instance.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign);
                     if (parentAircraft != null)
                     {
                         // Update the designated aircraft in the AircraftViewer
@@ -143,14 +142,13 @@ namespace DTIWindow.MMI
 
         // Opens the DTI Window form
         public void OpenForm(object? sender = null, EventArgs? e = null)
-        
         {
             try
             {
                 if (Window == null || Window.IsDisposed)
                 {
                     // Create a new AircraftViewer window if it doesn't exist or has been closed
-                    Window = new AircraftViewer(DTIWindow.Aircraft.Aircraft.AircraftList, DTIWindow.Aircraft.Pairings.AircraftPairings);
+                    Window = new AircraftViewer(AircraftManager.Instance.AircraftList, DTIWindow.Aircraft.Pairings.AircraftPairings);
                 }
 
                 Window.Show(Form.ActiveForm); // Show the AircraftViewer window
