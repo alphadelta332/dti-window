@@ -1,12 +1,11 @@
-using System.Collections.Generic;
-using System.Linq;
-
-namespace DTIWindowPlugin.Models
+namespace DTIWindow.Aircraft
 {
     // Manages traffic pairings between parent and child aircraft
     public static class Pairings
     {
         // Dictionary to store traffic pairings (parent callsign -> list of child callsigns)
+        
+        public static Dictionary<Aircraft, List<Aircraft>> AircraftPairings = new(); // Dictionary of traffic pairings between aircraft
         private static readonly Dictionary<string, List<string>> trafficPairs = new Dictionary<string, List<string>>();
 
         // Adds a traffic pairing between a parent and a child aircraft

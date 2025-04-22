@@ -2,55 +2,56 @@
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using DTIWindow.Aircraft;
 using vatsys;
 using vatsys.Plugin;
 
 // Represents a child aircraft in the system
-public class ChildAircraft
-{
-    public string Name { get; set; } // Name of the child aircraft
-    public string Callsign { get; set; } // Callsign of the child aircraft
-    public string Status { get; set; } // Status of the child aircraft (e.g., "Passed", "Unpassed")
+// public class ChildAircraft
+// {
+//     public string Name { get; set; } // Name of the child aircraft
+//     public string Callsign { get; set; } // Callsign of the child aircraft
+//     public string Status { get; set; } // Status of the child aircraft (e.g., "Passed", "Unpassed")
 
-    public ChildAircraft(string name, string callsign, string status)
-    {
-        // Ensure no null values are passed
-        Name = name ?? throw new ArgumentNullException(nameof(name), "Child aircraft name cannot be null.");
-        Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Child aircraft callsign cannot be null.");
-        Status = status ?? throw new ArgumentNullException(nameof(status), "Child aircraft status cannot be null.");
-    }
-}
+//     public ChildAircraft(string name, string callsign, string status)
+//     {
+//         // Ensure no null values are passed
+//         Name = name ?? throw new ArgumentNullException(nameof(name), "Child aircraft name cannot be null.");
+//         Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Child aircraft callsign cannot be null.");
+//         Status = status ?? throw new ArgumentNullException(nameof(status), "Child aircraft status cannot be null.");
+//     }
+// }
 
 // Represents a parent aircraft in the system
-public class Aircraft
-{
-    public string Name { get; set; } // Name of the aircraft
-    public string Callsign { get; set; } // Callsign of the aircraft
-    public BindingList<ChildAircraft> Children { get; set; } // List of child aircraft associated with this aircraft
+// public class Aircraft
+// {
+//     public string Name { get; set; } // Name of the aircraft
+//     public string Callsign { get; set; } // Callsign of the aircraft
+//     public BindingList<ChildAircraft> Children { get; set; } // List of child aircraft associated with this aircraft
 
-    public Aircraft(string name, string callsign)
-    {
-        // Ensure no null values are passed
-        Name = name ?? throw new ArgumentNullException(nameof(name), "Aircraft name cannot be null.");
-        Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Aircraft callsign cannot be null.");
-        Children = new BindingList<ChildAircraft>(); // Initialize the list of children
-    }
+//     public Aircraft(string name, string callsign)
+//     {
+//         // Ensure no null values are passed
+//         Name = name ?? throw new ArgumentNullException(nameof(name), "Aircraft name cannot be null.");
+//         Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Aircraft callsign cannot be null.");
+//         Children = new BindingList<ChildAircraft>(); // Initialize the list of children
+//     }
 
-    // Adds a child aircraft to the list if it doesn't already exist
-    public void AddChild(ChildAircraft child)
-    {
-        if (!Children.Any(c => c.Callsign == child.Callsign))
-        {
-            Children.Add(child);
-        }
-    }
+//     // Adds a child aircraft to the list if it doesn't already exist
+//     public void AddChild(ChildAircraft child)
+//     {
+//         if (!Children.Any(c => c.Callsign == child.Callsign))
+//         {
+//             Children.Add(child);
+//         }
+//     }
 
     // Checks if the aircraft has any child references
-    public bool HasReferences()
-    {
-        return Children.Count > 0;
-    }
-}
+//     public bool HasReferences()
+//     {
+//         return Children.Count > 0;
+//     }
+// }
 
 // Main plugin class for the DTI Window
 [Export(typeof(IPlugin))]

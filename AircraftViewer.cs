@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using DTIWindow.UI;
+using DTIWindow.Aircraft;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 public class AircraftViewer : BaseForm
@@ -521,7 +522,7 @@ public class AircraftViewer : BaseForm
 
                 // Reset the text color to its original state
                 var associatedChild = aircraftList
-                    .SelectMany(parent => parent.Children)
+                    .SelectMany<Aircraft, ChildAircraft>(parent => parent.Children)
                     .FirstOrDefault(c => c.Callsign == activeChildLabel.Text);
 
                 if (associatedChild != null)
