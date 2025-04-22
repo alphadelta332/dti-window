@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using DTIWindow.UI;
-using DTIWindow.Events;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 public class AircraftViewer : BaseForm
@@ -154,18 +153,67 @@ public class AircraftViewer : BaseForm
     {
         if (sender is Label childLabel)
         {
-            // Delegate the mouse down logic to the ChildrenEvents class
-            ChildrenEvents.HandleMouseDown(childLabel, ref activeChildLabel);
+            // Highlight the background while the mouse button is held
+            childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick); // Use the window title text color
+
+            // Change the text color to white
+            childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick);
+
+            // Track the active child label
+            activeChildLabel = childLabel;
+
+            // Capture mouse input
+            childLabel.Capture = true;
         }
     }
 
     // Handles mouse up on child aircraft labels
     private void ChildLabel_MouseUp(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
     {
-         if (sender is Label childLabel)
+        if (sender is Label childLabel)
         {
-            // Delegate the mouse up logic to the ChildrenEvents class
-            ChildrenEvents.HandleMouseUp(childLabel, e, parent, child, aircraftList, PopulateAircraftDisplay);
+            // Release mouse input
+            childLabel.Capture = false;
+
+            // Reset the background color when the mouse button is released
+            childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
+
+            // Perform the action based on the mouse button released
+            try
+            {
+                if (e.Button == MouseButtons.Left)
+                {
+                    // Set the status to "Passed"
+                    child.Status = "Passed";
+                }
+                else if (e.Button == MouseButtons.Right)
+                {
+                    // Set the status to "Unpassed"
+                    child.Status = "Unpassed";
+                }
+                else if (e.Button == MouseButtons.Middle)
+                {
+                    // Remove the child from the parent's children list
+                    parent.Children.Remove(child);
+
+                    // If the parent has no more children, remove the parent from the aircraft list
+                    if (parent.Children.Count == 0)
+                    {
+                        aircraftList.Remove(parent);
+                    }
+                }
+
+                // Refresh the UI to reflect the change
+                PopulateAircraftDisplay();
+            }
+            catch (Exception)
+            {
+                // Handle exceptions silently in release mode
+            }
+            finally
+            {
+                activeChildLabel = null;
+            }
         }
     }
 
