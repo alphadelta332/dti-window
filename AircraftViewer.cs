@@ -282,47 +282,6 @@ public class AircraftViewer : BaseForm
         // Refresh the UI to reflect the change
         PopulateAircraftDisplay();
     }
-
-    private static string GetFDRState(string callsign)
-    {
-        try
-        {
-            // Use reflection to access the AircraftTracks field
-            var aircraftTracksField = typeof(MMI).GetField("AircraftTracks", BindingFlags.Static | BindingFlags.NonPublic);
-            if (aircraftTracksField == null)
-            {
-                return "AircraftTracks field not found";
-            }
-
-            // Get the value of AircraftTracks and cast it to the correct type
-            var aircraftTracks = aircraftTracksField.GetValue(null) as ConcurrentDictionary<object, Track>;
-            if (aircraftTracks == null)
-            {
-                return "AircraftTracks is null";
-            }
-
-            // Find the track with the matching callsign
-            var matchingTrack = aircraftTracks.Values.FirstOrDefault(track =>
-            {
-                var fdr = track.GetFDR();
-                return fdr?.Callsign == callsign;
-            });
-
-            if (matchingTrack == null)
-            {
-                return "No matching track found";
-            }
-
-            // Retrieve the FDR state
-            var fdrState = matchingTrack.GetFDR()?.State;
-            return fdrState?.ToString() ?? "Unknown State";
-        }
-        catch (Exception)
-        {
-            return "Error retrieving FDR state";
-        }
-    }
-
     private static string GetHMIState(string callsign)
     {
         try
