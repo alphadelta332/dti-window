@@ -1,4 +1,5 @@
 
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using DTIWindow.Aircraft;
 using vatsys;
@@ -148,7 +149,7 @@ namespace DTIWindow.MMI
                 if (Window == null || Window.IsDisposed)
                 {
                     // Create a new AircraftViewer window if it doesn't exist or has been closed
-                    Window = new AircraftViewer(AircraftManager.Instance.AircraftList, DTIWindow.Aircraft.Pairings.AircraftPairings);
+                    Window = new AircraftViewer(new BindingList<DTIWindow.Aircraft.Aircraft>(AircraftManager.Instance.AircraftList), DTIWindow.Aircraft.Pairings.AircraftPairings);
                 }
 
                 Window.Show(Form.ActiveForm); // Show the AircraftViewer window
