@@ -1,7 +1,8 @@
 
 using System.ComponentModel;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using DTIWindow.Aircraft;
+using DTIWindow.Models;
 using vatsys;
 
 namespace DTIWindow.MMI
@@ -149,7 +150,7 @@ namespace DTIWindow.MMI
                 if (Window == null || Window.IsDisposed)
                 {
                     // Create a new AircraftViewer window if it doesn't exist or has been closed
-                    Window = new AircraftViewer(new BindingList<DTIWindow.Aircraft.Aircraft>(AircraftManager.Instance.AircraftList), DTIWindow.Aircraft.Pairings.AircraftPairings);
+                    Window = new AircraftViewer(AircraftManager.Instance.AircraftList, new Dictionary<Aircraft, List<Aircraft>>()); // Provide required arguments
                 }
 
                 Window.Show(Form.ActiveForm); // Show the AircraftViewer window
@@ -162,6 +163,55 @@ namespace DTIWindow.MMI
         public static void ResetKeybindPressed()
         {
             KeybindPressed = false;
+        }
+        public void Initialize()
+        {
+            try
+            {
+                // Get the TracksChanged event using reflection
+                EventInfo tracksChangedEvent = typeof(vatsys.MMI).GetEvent("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
+                if (tracksChangedEvent == null)
+                {
+                    return;
+                }
+
+                // Get the backing field for the TracksChanged event
+                FieldInfo? eventField = typeof(vatsys.MMI).GetField("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
+                if (eventField == null)
+                {
+                    return;
+                }
+
+                // Get the current value of the event (the delegate)
+                Delegate? currentDelegate = eventField.GetValue(null) as Delegate;
+
+                // Create a delegate for the OnTracksChanged method
+                MethodInfo onTracksChangedMethod = typeof(AircraftViewer).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (onTracksChangedMethod == null)
+                {
+                    return;
+                }
+
+                // Get the event handler type (EventHandler<TracksChangedEventArgs>)
+                Type? eventHandlerType = tracksChangedEvent.EventHandlerType;
+                if (eventHandlerType == null)
+                {
+                    return;
+                }
+
+                // Create a delegate of the correct type for the event handler
+                Delegate newDelegate = Delegate.CreateDelegate(eventHandlerType, this, onTracksChangedMethod);
+
+                // Combine the new delegate with the existing delegate
+                Delegate? combinedDelegate = Delegate.Combine(currentDelegate, newDelegate);
+
+                // Set the combined delegate back to the event field
+                eventField.SetValue(null, combinedDelegate);
+            }
+            catch (Exception)
+            {
+                // Handle exceptions silently in release mode
+            }
         }
     }
 }

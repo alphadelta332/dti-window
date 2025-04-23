@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace DTIWindow.Aircraft
+namespace DTIWindow.Models
 {
     public class Aircraft
     {

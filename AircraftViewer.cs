@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using DTIWindow.UI;
-using DTIWindow.Aircraft;
+using DTIWindow.Models;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 public class AircraftViewer : BaseForm

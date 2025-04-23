@@ -1,4 +1,4 @@
-namespace DTIWindow.Aircraft
+namespace DTIWindow.Models
 {
     // Manages traffic pairings between parent and child aircraft
     public static class Pairings
