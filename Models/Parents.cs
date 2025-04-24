@@ -7,7 +7,8 @@ namespace DTIWindow.Models
         public string Name { get; set; } // Name of the aircraft
         public string Callsign { get; set; } // Callsign of the aircraft
         public BindingList<ChildAircraft> Children { get; set; } // List of child aircraft associated with this aircraft
-        public BindingList<Aircraft> AircraftList = new(); // List of all parent aircraft
+        private Aircraft? designatedAircraft = null; // Currently designated aircraft
+        private BindingList<Aircraft> aircraftList = new BindingList<Aircraft>(); // List of aircraft in the system
 
         public Aircraft(string name, string callsign)
         {
@@ -30,6 +31,14 @@ namespace DTIWindow.Models
         public bool HasReferences()
         {
             return Children.Count > 0;
+        }
+        public void SetDesignatedAircraft(Aircraft? aircraft)
+        {
+            designatedAircraft = aircraft;
+
+            // Refresh the UI to reflect the change
+            var windowInstance = new DTIWindow.UI.Window(aircraftList, new Dictionary<Aircraft, List<Aircraft>>());
+            windowInstance.PopulateAircraftDisplay();
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace DTIWindow.Models
 {
@@ -6,22 +7,29 @@ namespace DTIWindow.Models
     {
         private static AircraftManager? _instance;
         public static AircraftManager Instance => _instance ??= new AircraftManager();
-
+        public BindingList<Aircraft> aircraftList = new BindingList<Aircraft>(); // List of aircraft in the system
         public BindingList<Aircraft> AircraftList { get; private set; }
+        private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
 
-        private AircraftManager()
+        public AircraftManager()
         {
             AircraftList = new BindingList<Aircraft>();
         }
 
         public Aircraft GetOrCreateAircraft(string callsign)
         {
-            var aircraft = AircraftList.FirstOrDefault(a => a.Callsign == callsign);
+            // Find the aircraft by callsign
+            Aircraft? aircraft = AircraftList.FirstOrDefault(a => a.Callsign == callsign);
+
             if (aircraft == null)
             {
-                aircraft = new Aircraft("DefaultName", callsign);
-                AircraftList.Add(aircraft);
+                // If the aircraft doesn't exist, create it
+                aircraft = new Aircraft($"Aircraft{nextAircraftNumber++}", callsign);
+                AircraftList.Add(aircraft); // Add to the shared list
             }
+
+            Debug.WriteLine($"Aircraft created or retrieved: {callsign}");
+
             return aircraft;
         }
     }

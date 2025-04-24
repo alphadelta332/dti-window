@@ -1,6 +1,4 @@
-using System.Drawing;
-using System.Reflection;
-using vatsys;
+using System.Diagnostics;
 
 namespace DTIWindow.UI
 {
@@ -15,13 +13,6 @@ namespace DTIWindow.UI
             ChildLabelPassedText,
             ChildLabelUnpassedText,
             DesignationBox,
-            Default,
-            Jurisdiction,
-            Announced,
-            Preactive,
-            PostJurisdiction,
-            NonJurisdiction,
-            GhostJurisdiction
         }
 
         public static Color GetColour(Identities identity)
@@ -42,8 +33,11 @@ namespace DTIWindow.UI
         {
             try
             {
+                Debug.WriteLine($"GetHMIStateAndColor called with hmiState: {hmiState}");
+
                 if (string.IsNullOrEmpty(hmiState) || hmiState == "Unknown State")
                 {
+                    Debug.WriteLine("HMI state is null, empty, or 'Unknown State'. Returning default values.");
                     return ("Unknown State", Color.Gray); // Default for unknown states
                 }
 
@@ -61,13 +55,18 @@ namespace DTIWindow.UI
                     _ => vatsys.Colours.Identities.Default
                 };
 
+                Debug.WriteLine($"Mapped HMI state '{hmiState}' to vatsys.Colours identity: {identity}");
+
                 // Get the color from vatsys.Colours
                 Color color = vatsys.Colours.GetColour(identity);
 
+                Debug.WriteLine($"Retrieved color for identity '{identity}': {color}");
+
                 return (hmiState, color);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Error in GetHMIStateAndColor: {ex.Message}");
                 return ("Error", Color.Red); // Default error case
             }
         }

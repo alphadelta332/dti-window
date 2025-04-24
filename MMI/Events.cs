@@ -1,5 +1,3 @@
-
-using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using DTIWindow.Models;
@@ -11,14 +9,12 @@ namespace DTIWindow.MMI
     {
         public static bool KeybindPressed; // Tracks if the F7 key is currently pressed
         public Track? PreviousSelectedTrack; // Stores the previously selected radar track
-        public AircraftViewer? Window; // Reference to the DTI Window form
+        private DTIWindow.UI.Window? Window; // Reference to the DTI Window form
         public CancellationTokenSource? keybindTimeout;
         public const int WH_KEYBOARD_LL = 13; // Low-level keyboard hook constant
         public const int WM_KEYDOWN = 0x0100; // Windows message for key down
         public const int WM_KEYUP = 0x0101; // Windows message for key up
         public static IntPtr _hookID = IntPtr.Zero; // Handle for the global keyboard hook
-        public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam); // Delegate for the keyboard hook callback
-        public static LowLevelKeyboardProc _proc = HookCallback; // Delegate for the keyboard hook callback
         private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
@@ -93,11 +89,12 @@ namespace DTIWindow.MMI
                     }
 
                     // Get or create the parent and child aircraft
-                    var parentAircraft = Window.GetOrCreateAircraft(PreviousSelectedTrack.GetPilot().Callsign);
-                    var childAircraft = Window.GetOrCreateAircraft(track.GetPilot().Callsign);
+                    var parentAircraft = AircraftManager.Instance.GetOrCreateAircraft(PreviousSelectedTrack.GetPilot().Callsign);
+                    var childAircraft = AircraftManager.Instance.GetOrCreateAircraft(track.GetPilot().Callsign);
 
                     // Create a traffic pairing between the parent and child aircraft
-                    Window.CreateTrafficPairing(parentAircraft, childAircraft);
+                    var pairings = new DTIWindow.Models.Pairings();
+                    pairings.CreateTrafficPairing(parentAircraft, childAircraft);
 
                     ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
                     return;
@@ -106,13 +103,15 @@ namespace DTIWindow.MMI
                 // Check if the selected track corresponds to a parent aircraft
                 if (track != null)
                 {
-                    var parentAircraft = AircraftManager.Instance.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign);
+                    var parentAircraft = track != null 
+                        ? AircraftManager.Instance.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign) 
+                        : null;
                     if (parentAircraft != null)
                     {
                         // Update the designated aircraft in the AircraftViewer
                         if (Window != null && !Window.IsDisposed)
                         {
-                            Window.SetDesignatedAircraft(parentAircraft);
+                            parentAircraft?.SetDesignatedAircraft(parentAircraft);
                         }
                     }
                     else
@@ -120,16 +119,19 @@ namespace DTIWindow.MMI
                         // Clear the designated aircraft if no match is found
                         if (Window != null && !Window.IsDisposed)
                         {
-                            Window.SetDesignatedAircraft(null);
+                            parentAircraft?.SetDesignatedAircraft(null);
                         }
                     }
                 }
                 else
                 {
                     // Clear the designated aircraft if no track is selected
+                    var parentAircraft = track?.GetPilot() != null 
+                        ? AircraftManager.Instance.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign) 
+                        : null;
                     if (Window != null && !Window.IsDisposed)
                     {
-                        Window.SetDesignatedAircraft(null);
+                        parentAircraft?.SetDesignatedAircraft(null);
                     }
                 }
 
@@ -150,7 +152,9 @@ namespace DTIWindow.MMI
                 if (Window == null || Window.IsDisposed)
                 {
                     // Create a new AircraftViewer window if it doesn't exist or has been closed
-                    Window = new AircraftViewer(AircraftManager.Instance.AircraftList, new Dictionary<Aircraft, List<Aircraft>>()); // Provide required arguments
+                    var aircraftList = AircraftManager.Instance.AircraftList;
+                    var trafficPairings = Pairings.GetTrafficPairings(); // Retrieve the shared trafficPairings dictionary
+                    Window = new DTIWindow.UI.Window(aircraftList, trafficPairings);
                 }
 
                 Window.Show(Form.ActiveForm); // Show the AircraftViewer window

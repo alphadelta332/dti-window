@@ -1,8 +1,6 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
-using System.Reflection;
+using System.Diagnostics;
 using DTIWindow.Models;
-using DTIWindow.MMI;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 
@@ -15,8 +13,6 @@ namespace DTIWindow.UI
         private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores traffic pairings between aircraft
         private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
         private Aircraft? designatedAircraft = null; // Currently designated aircraft
-        private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
-        private Label? activeChildLabel = null; // Tracks the currently active child label
 
         // Constructor for the AircraftViewer form
         public Window(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
@@ -71,21 +67,26 @@ namespace DTIWindow.UI
         {
             try
             {
+                Debug.WriteLine($"Populating display with {aircraftList.Count} aircraft");
                 aircraftPanel.Controls.Clear(); // Clear all previous UI elements
                 int yOffset = 10; // Y-positioning for UI elements
 
                 // Display traffic pairings for each aircraft
                 foreach (var aircraft in aircraftList)
                 {
-                    // Retrieve the HMI state and color for the aircraft
-                    var (hmiState, color) = Colours.GetHMIStateAndColor(aircraft.Callsign);
+                    // Retrieve the HMI state for the aircraft's callsign
+                    string hmiState = DTIWindow.MMI.States.GetHMIState(aircraft.Callsign);
+                    Debug.WriteLine($"Retrieved HMI state for callsign '{aircraft.Callsign}': {hmiState}");
+
+                    // Retrieve the HMI state and color
+                    var (state, color) = Colours.GetHMIStateAndColor(hmiState);
 
                     // Create a label for the parent aircraft
                     Label parentLabel = new Label
                     {
                         Text = aircraft.Callsign,
                         Font = terminusFont,
-                        ForeColor = color, // Updated
+                        ForeColor = color,
                         Location = new Point(30, yOffset),
                         AutoSize = true
                     };
@@ -103,14 +104,14 @@ namespace DTIWindow.UI
                     boxPanel.Paint += (s, e) =>
                     {
                         e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                        using (Pen pen = new Pen(UIColours.GetColour(UIColours.Identities.DesignationBox), 3)) // Updated
+                        using (Pen pen = new Pen(UIColours.GetColour(UIColours.Identities.DesignationBox), 3))
                         {
                             e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
                         }
 
                         if (designatedAircraft != null && designatedAircraft.Callsign == aircraft.Callsign)
                         {
-                            using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox))) // Updated
+                            using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox)))
                             {
                                 e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
                             }
@@ -129,11 +130,11 @@ namespace DTIWindow.UI
                             Text = child.Callsign,
                             Font = terminusFont,
                             ForeColor = child.Status == "Passed"
-                                ? UIColours.GetColour(UIColours.Identities.ChildLabelPassedText) // Updated
-                                : UIColours.GetColour(UIColours.Identities.ChildLabelUnpassedText), // Updated
+                                ? UIColours.GetColour(UIColours.Identities.ChildLabelPassedText)
+                                : UIColours.GetColour(UIColours.Identities.ChildLabelUnpassedText),
                             Location = new Point(100, yOffset),
                             AutoSize = true,
-                            BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground) // Updated
+                            BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground)
                         };
 
                         // Set event handlers for mouse actions on child labels
@@ -148,9 +149,9 @@ namespace DTIWindow.UI
                     yOffset += 10;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Handle exceptions silently in release mode
+                Debug.WriteLine($"Error in PopulateAircraftDisplay: {ex.Message}");
             }
         }
     }
