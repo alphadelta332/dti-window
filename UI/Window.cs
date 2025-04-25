@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using DTIWindow.Models;
+using DTIWindow.Events;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 
@@ -43,7 +44,7 @@ namespace DTIWindow.UI
             this.Controls.Add(aircraftPanel);
 
             // Initialize the TracksChanged event subscription
-            var eventsInstance = new DTIWindow.MMI.Events();
+            var eventsInstance = new VatsysEvents();
             eventsInstance.Initialize();
         }
 
@@ -74,9 +75,14 @@ namespace DTIWindow.UI
                 // Display traffic pairings for each aircraft
                 foreach (var aircraft in aircraftList)
                 {
+                    Debug.WriteLine($"Parent aircraft: {aircraft.Callsign}, Children: {aircraft.Children.Count}");
+                    foreach (var child in aircraft.Children)
+                    {
+                        Debug.WriteLine($"  Child aircraft: {child.Callsign}");
+                    }
+
                     // Retrieve the HMI state for the aircraft's callsign
                     string hmiState = DTIWindow.MMI.States.GetHMIState(aircraft.Callsign);
-                    Debug.WriteLine($"Retrieved HMI state for callsign '{aircraft.Callsign}': {hmiState}");
 
                     // Retrieve the HMI state and color
                     var (state, color) = Colours.GetHMIStateAndColor(hmiState);
@@ -138,9 +144,9 @@ namespace DTIWindow.UI
                         };
 
                         // Set event handlers for mouse actions on child labels
-                        var childAircraftInstance = new DTIWindow.Models.ChildAircraft(child.Callsign, child.Status, aircraft.Callsign);
-                        childLabel.MouseDown += (sender, e) => childAircraftInstance.ChildLabel_MouseDown(sender, e, aircraft, child);
-                        childLabel.MouseUp += (sender, e) => childAircraftInstance.ChildLabel_MouseUp(sender, e, aircraft, child);
+                        var mouseEvents = new MouseEvents();
+                        childLabel.MouseDown += (sender, e) => mouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
+                        childLabel.MouseUp += (sender, e) => mouseEvents.ChildLabel_MouseUp(sender, e, aircraft, child);
 
                         aircraftPanel.Controls.Add(childLabel);
                         yOffset += 20;

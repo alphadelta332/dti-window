@@ -9,50 +9,47 @@ namespace DTIWindow.Models
         private static Dictionary<Aircraft, List<Aircraft>> trafficPairings = new Dictionary<Aircraft, List<Aircraft>>(); // Stores traffic pairings between aircraft
         private Aircraft? designatedAircraft = null; // Currently designated aircraft
 
-// Creates a traffic pairing between two aircraft
-    public void CreateTrafficPairing(Aircraft firstAircraft, Aircraft secondAircraft)
-    {
-        if (firstAircraft == secondAircraft)
+        // Creates a traffic pairing between two aircraft
+        public void CreateTrafficPairing(Aircraft firstAircraft, Aircraft secondAircraft)
         {
-            return; // Prevent self-pairing
-        }
+            if (firstAircraft == secondAircraft)
+            {
+                return; // Prevent self-pairing
+            }
 
-        Debug.WriteLine($"Creating pairing: {firstAircraft.Callsign} <-> {secondAircraft.Callsign}");
+            // Add children to reflect the traffic pairing
+            firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
+            secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
 
-        // Add children to reflect the traffic pairing
-        firstAircraft.AddChild(new ChildAircraft("Child", secondAircraft.Callsign, "Unpassed"));
-        secondAircraft.AddChild(new ChildAircraft("Child", firstAircraft.Callsign, "Unpassed"));
+            // Update the traffic pairings dictionary
+            if (!trafficPairings.ContainsKey(firstAircraft))
+            {
+                trafficPairings[firstAircraft] = new List<Aircraft>();
+            }
+            if (!trafficPairings[firstAircraft].Contains(secondAircraft))
+            {
+                trafficPairings[firstAircraft].Add(secondAircraft);
+            }
 
-        // Update the traffic pairings dictionary
-        if (!trafficPairings.ContainsKey(firstAircraft))
-        {
-            trafficPairings[firstAircraft] = new List<Aircraft>();
-        }
-        if (!trafficPairings[firstAircraft].Contains(secondAircraft))
-        {
-            trafficPairings[firstAircraft].Add(secondAircraft);
-        }
+            if (!trafficPairings.ContainsKey(secondAircraft))
+            {
+                trafficPairings[secondAircraft] = new List<Aircraft>();
+            }
+            if (!trafficPairings[secondAircraft].Contains(firstAircraft))
+            {
+                trafficPairings[secondAircraft].Add(firstAircraft);
+            }
 
-        if (!trafficPairings.ContainsKey(secondAircraft))
-        {
-            trafficPairings[secondAircraft] = new List<Aircraft>();
-        }
-        if (!trafficPairings[secondAircraft].Contains(firstAircraft))
-        {
-            trafficPairings[secondAircraft].Add(firstAircraft);
-        }
+            // Ensure the designated aircraft is set (if not already set)
+            if (designatedAircraft == null)
+            {
+                designatedAircraft = firstAircraft; // Default to the first aircraft in the pairing
+            }
 
-        // Ensure the designated aircraft is set (if not already set)
-        if (designatedAircraft == null)
-        {
-            designatedAircraft = firstAircraft; // Default to the first aircraft in the pairing
+            // Refresh the UI after all updates
+            var windowInstance = Application.OpenForms.OfType<DTIWindow.UI.Window>().FirstOrDefault();
+            windowInstance?.PopulateAircraftDisplay();
         }
-
-        // Refresh the UI to reflect the pairing and designation
-        var aircraftManager = new AircraftManager();
-        var windowInstance = new DTIWindow.UI.Window(aircraftManager.aircraftList, new Dictionary<Aircraft, List<Aircraft>>());
-        windowInstance.PopulateAircraftDisplay();
-    }
 
         // Retrieves the list of child callsigns for a given parent callsign
         public static List<string> GetChildren(string parentCallsign)

@@ -1,0 +1,251 @@
+using System.Diagnostics;
+using DTIWindow.Models;
+using vatsys;
+using UIColours = DTIWindow.UI.Colours;
+
+namespace DTIWindow.Events
+{
+    public class MouseEvents : Form
+    {
+        private Panel aircraftPanel = new Panel(); // UI panel to display the list of aircraft
+        public static Label? activeChildLabel = null; // Tracks the currently active child label
+        public void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
+        {
+            if (sender is Label childLabel)
+            {
+                // Highlight the background while the mouse button is held
+                childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick); // Use the window title text color
+
+                // Change the text color to white
+                childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick);
+
+                // Track the active child label
+                activeChildLabel = childLabel;
+
+                // Capture mouse input
+                childLabel.Capture = true;
+            }
+        }
+
+        // Handles mouse up on child aircraft labels
+        public void ChildLabel_MouseUp(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
+        {
+            if (sender is Label childLabel)
+            {
+                // Release mouse input
+                childLabel.Capture = false;
+
+                // Reset the background color when the mouse button is released
+                childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
+
+                // Perform the action based on the mouse button released
+                // Release mouse input
+                childLabel.Capture = false;
+
+                // Reset the background color when the mouse button is released
+                childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
+
+                // Perform the action based on the mouse button released
+                try
+                {
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        // Set the status to "Passed"
+                        child.Status = "Passed";
+                    }
+                    else if (e.Button == MouseButtons.Right)
+                    {
+                        // Set the status to "Unpassed"
+                        child.Status = "Unpassed";
+                    }
+                    else if (e.Button == MouseButtons.Middle)
+                    {
+                        // Remove the child from the parent's children list
+                        parent.Children.Remove(child);
+
+                        // If the parent has no more children, remove the parent from the aircraft list
+                        if (parent.Children.Count == 0)
+                        {
+                            AircraftManager.AircraftList.Remove(parent);
+                        }
+                    }
+
+                    // Refresh the existing Window instance
+                    var windowInstance = Application.OpenForms.OfType<DTIWindow.UI.Window>().FirstOrDefault();
+                    windowInstance?.PopulateAircraftDisplay();
+                }
+                catch (Exception)
+                {
+                    // Handle exceptions silently in release mode
+                }
+                finally
+                {
+                    activeChildLabel = null;
+                }
+            }
+        }
+        protected void OnPreviewClientMouseUp(BaseMouseEventArgs e)
+        {
+            Debug.WriteLine($"OnPreviewClientMouseUp called with button: {e.Button}");
+
+            if (e.Button == MouseButtons.Middle)
+            {
+                // Get the mouse position relative to the aircraftPanel
+                Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+                Debug.WriteLine($"Mouse position: {mousePosition}");
+
+                // Iterate through the child controls of the aircraftPanel
+                foreach (Control control in aircraftPanel.Controls)
+                {
+                    if (control is Label childLabel && control.Bounds.Contains(mousePosition))
+                    {
+                        Debug.WriteLine($"Middle-click detected on label with text: {childLabel.Text}");
+
+                        // Find the parent and child objects associated with the label
+                        foreach (var parent in AircraftManager.AircraftList)
+                        {
+                            var child = parent.Children.FirstOrDefault(c => c.Callsign == childLabel.Text);
+                            if (child != null)
+                            {
+                                Debug.WriteLine($"Found parent '{parent.Callsign}' and child '{child.Callsign}'");
+                                HandleMiddleClick(parent, child);
+                                break;
+                            }
+                        }
+
+                        // Prevent the default behavior by not calling the base method for middle-click
+                        return;
+                    }
+                }
+
+                Debug.WriteLine("Middle-click did not hit any child label");
+                return; // Prevent the default behavior if no label is found
+            }
+
+            // base.OnPreviewClientMouseUp(e); // Call the base method for other mouse buttons
+        }
+
+        private void HandleMiddleClick(Aircraft parent, ChildAircraft child)
+        {
+            try
+            {
+                Debug.WriteLine($"HandleMiddleClick called for parent '{parent.Callsign}' and child '{child.Callsign}'");
+
+                // Remove the child from the parent's children list
+                parent.Children.Remove(child);
+                Debug.WriteLine($"Removed child '{child.Callsign}' from parent '{parent.Callsign}'");
+
+                // If the parent has no more children, remove the parent from the aircraft list
+                if (parent.Children.Count == 0)
+                {
+                    AircraftManager.AircraftList.Remove(parent);
+                    Debug.WriteLine($"Removed parent '{parent.Callsign}' from AircraftManager.AircraftList");
+                }
+
+                // Refresh the UI to reflect the change
+                var windowInstance = Application.OpenForms.OfType<DTIWindow.UI.Window>().FirstOrDefault();
+                if (windowInstance != null)
+                {
+                    Debug.WriteLine("Refreshing the UI");
+                    windowInstance.PopulateAircraftDisplay();
+                }
+                else
+                {
+                    Debug.WriteLine("Window instance not found");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in HandleMiddleClick: {ex.Message}");
+            }
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            const int WM_PARENTNOTIFY = 0x0210; // Parent notify message
+            const int WM_MBUTTONDOWN = 0x0207; // Middle mouse button down
+            const int WM_MBUTTONUP = 0x0208;   // Middle mouse button up
+
+            // Check if the message is WM_PARENTNOTIFY
+            if (m.Msg == WM_PARENTNOTIFY)
+            {
+                int lowWord = m.WParam.ToInt32() & 0xFFFF; // Extract the low word of wParam
+
+                if (lowWord == WM_MBUTTONDOWN)
+                {
+                    // Capture mouse input
+                    this.Capture = true;
+
+                    // Get the mouse position relative to the aircraftPanel
+                    Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+
+                    // Check if the mouse is over a child label
+                    foreach (Control control in aircraftPanel.Controls)
+                    {
+                        if (control is Label childLabel && childLabel.Bounds.Contains(mousePosition))
+                        {
+                            // Highlight the label background
+                            childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick);
+
+                            // Change the text color to white
+                            childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick);
+
+                            // Track the active child label
+                            DTIWindow.Models.ChildAircraft.activeChildLabel = childLabel;
+
+                            return; // Prevent further processing
+                        }
+                    }
+
+                    // If no label is found, clear the active child label
+                    DTIWindow.Models.ChildAircraft.activeChildLabel = null;
+                }
+            }
+
+            // Check for WM_MBUTTONUP
+            if (m.Msg == WM_MBUTTONUP)
+            {
+                // Release mouse input
+                this.Capture = false;
+
+                // Use the active child label if it exists
+                if (DTIWindow.Models.ChildAircraft.activeChildLabel != null)
+                {
+                    // Reset the label background
+                    DTIWindow.Models.ChildAircraft.activeChildLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
+
+                    // Reset the text color to its original state
+                    var associatedChild = AircraftManager.AircraftList
+                        .SelectMany(parent => parent.Children)
+                        .FirstOrDefault(c => c.Callsign == DTIWindow.Models.ChildAircraft.activeChildLabel.Text);
+
+                    if (associatedChild != null)
+                    {
+                        DTIWindow.Models.ChildAircraft.activeChildLabel.ForeColor = associatedChild.Status == "Passed"
+                            ? UIColours.GetColour(UIColours.Identities.ChildLabelPassedText)
+                            : UIColours.GetColour(UIColours.Identities.ChildLabelUnpassedText);
+
+                        // Perform the action
+                        foreach (var parent in AircraftManager.AircraftList)
+                        {
+                            var child = parent.Children.FirstOrDefault(c => c.Callsign == DTIWindow.Models.ChildAircraft.activeChildLabel.Text);
+                            if (child != null)
+                            {
+                                HandleMiddleClick(parent, child);
+                                break;
+                            }
+                        }
+                    }
+
+                    // Clear the active child label
+                    DTIWindow.Models.ChildAircraft.activeChildLabel = null;
+
+                    return; // Prevent further processing
+                }
+            }
+
+            // Call the base method for other messages
+            base.WndProc(ref m);
+        }
+    }
+}

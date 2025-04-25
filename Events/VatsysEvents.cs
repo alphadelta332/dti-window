@@ -1,73 +1,14 @@
+using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using DTIWindow.Models;
 using vatsys;
 
-namespace DTIWindow.MMI
+namespace DTIWindow.Events
 {
-    public class Events : Form
+    public class VatsysEvents : Form
     {
-        public static bool KeybindPressed; // Tracks if the F7 key is currently pressed
         public Track? PreviousSelectedTrack; // Stores the previously selected radar track
-        private DTIWindow.UI.Window? Window; // Reference to the DTI Window form
-        public CancellationTokenSource? keybindTimeout;
-        public const int WH_KEYBOARD_LL = 13; // Low-level keyboard hook constant
-        public const int WM_KEYDOWN = 0x0100; // Windows message for key down
-        public const int WM_KEYUP = 0x0101; // Windows message for key up
-        public static IntPtr _hookID = IntPtr.Zero; // Handle for the global keyboard hook
-        private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (nCode >= 0)
-            {
-                int vkCode = Marshal.ReadInt32(lParam); // Get the virtual key code
-
-                if (wParam == (IntPtr)WM_KEYDOWN && vkCode == (int)Keys.F7)
-                {
-                    KeybindPressed = true; // Set KeybindPressed to true
-                }
-                else if (wParam == (IntPtr)WM_KEYUP && vkCode == (int)Keys.F7)
-                {
-                    KeybindPressed = false; // Set KeybindPressed to false
-                }
-            }
-
-            return DTIWindowPluginClass.CallNextHookEx(_hookID, nCode, wParam, lParam); // Pass the event to the next hook in the chain
-        }
-
-        // Event handler for when a key is released
-        public new void KeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.F7)
-            {
-                KeybindPressed = false; // Set KeybindPressed to false when F7 is released
-
-                // Cancel the timeout
-                keybindTimeout?.Cancel();
-            }
-        }
-
-        // Event handler for when a key is pressed
-        public new void KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.F7)
-            {
-                KeybindPressed = true; // Set KeybindPressed to true when F7 is pressed
-
-                // Cancel any existing timeout
-                keybindTimeout?.Cancel();
-
-                // Start a new timeout
-                keybindTimeout = new CancellationTokenSource();
-                var token = keybindTimeout.Token;
-                Task.Delay(5000, token).ContinueWith(t =>
-                {
-                    if (!t.IsCanceled)
-                    {
-                        KeybindPressed = false;
-                    }
-                });
-            }
-        }
+        private UI.Window? Window; // Reference to the DTI Window form
 
         // Event handler for when a radar track is selected
         public void TrackSelected(object sender, EventArgs e)
@@ -76,7 +17,7 @@ namespace DTIWindow.MMI
             {
                 var track = vatsys.MMI.SelectedTrack; // Get the currently selected track
 
-                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeybindPressed)
+                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && DTIWindow.Events.KeyEvents.KeybindPressed)
                 {
                     vatsys.MMI.SelectedTrack = PreviousSelectedTrack; // Re-select the previous track
 
@@ -96,7 +37,7 @@ namespace DTIWindow.MMI
                     var pairings = new DTIWindow.Models.Pairings();
                     pairings.CreateTrafficPairing(parentAircraft, childAircraft);
 
-                    ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
+                    DTIWindow.Events.KeyEvents.ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
                     return;
                 }
 
@@ -104,7 +45,7 @@ namespace DTIWindow.MMI
                 if (track != null)
                 {
                     var parentAircraft = track != null 
-                        ? AircraftManager.Instance.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign) 
+                        ? AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign) 
                         : null;
                     if (parentAircraft != null)
                     {
@@ -127,7 +68,7 @@ namespace DTIWindow.MMI
                 {
                     // Clear the designated aircraft if no track is selected
                     var parentAircraft = track?.GetPilot() != null 
-                        ? AircraftManager.Instance.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign) 
+                        ? AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign) 
                         : null;
                     if (Window != null && !Window.IsDisposed)
                     {
@@ -151,22 +92,18 @@ namespace DTIWindow.MMI
             {
                 if (Window == null || Window.IsDisposed)
                 {
-                    // Create a new AircraftViewer window if it doesn't exist or has been closed
-                    var aircraftList = AircraftManager.Instance.AircraftList;
-                    var trafficPairings = Pairings.GetTrafficPairings(); // Retrieve the shared trafficPairings dictionary
+                    // Use the shared AircraftList from AircraftManager
+                    var aircraftList = AircraftManager.AircraftList;
+                    var trafficPairings = Pairings.GetTrafficPairings();
                     Window = new DTIWindow.UI.Window(aircraftList, trafficPairings);
                 }
 
-                Window.Show(Form.ActiveForm); // Show the AircraftViewer window
+                Window.Show(Form.ActiveForm);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Handle exceptions silently in release mode
+                Debug.WriteLine($"Error opening form: {ex.Message}");
             }
-        }
-        public static void ResetKeybindPressed()
-        {
-            KeybindPressed = false;
         }
         public void Initialize()
         {
@@ -211,6 +148,33 @@ namespace DTIWindow.MMI
 
                 // Set the combined delegate back to the event field
                 eventField.SetValue(null, combinedDelegate);
+            }
+            catch (Exception)
+            {
+                // Handle exceptions silently in release mode
+            }
+        }
+        public void OnTracksChanged(object sender, object e)
+        {
+            try
+            {
+                // Dynamically check if the event args are of type TracksChangedEventArgs
+                var tracksChangedEventArgsType = typeof(vatsys.MMI).Assembly.GetType("vatsys.TracksChangedEventArgs");
+                if (tracksChangedEventArgsType != null && tracksChangedEventArgsType.IsInstanceOfType(e))
+                {
+                    // Access the 'Track' property
+                    var trackProperty = tracksChangedEventArgsType.GetProperty("Track", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    var track = trackProperty?.GetValue(e);
+
+                    // Access the 'Removed' property
+                    var removedProperty = tracksChangedEventArgsType.GetProperty("Removed", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    bool removed = removedProperty != null && (bool)removedProperty.GetValue(e);
+                }
+
+                // Refresh the aircraft display
+                var aircraftList = AircraftManager.AircraftList;
+                var windowInstance = new DTIWindow.UI.Window(aircraftList, new Dictionary<Aircraft, List<Aircraft>>());
+                windowInstance.PopulateAircraftDisplay();
             }
             catch (Exception)
             {

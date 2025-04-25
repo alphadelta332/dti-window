@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using vatsys;
 using vatsys.Plugin;
+using DTIWindow.Events;
 
 namespace DTIWindow.MMI
 {
@@ -11,15 +12,7 @@ namespace DTIWindow.MMI
     {
         private readonly CustomToolStripMenuItem _opener; // Menu button for opening the DTI Window
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
-        private static LowLevelKeyboardProc _proc = HookCallback; // Delegate for the keyboard hook callback
-        private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (nCode >= 0)
-            {
-                // Process the keyboard input here if needed
-            }
-            return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
-        }
+        private static LowLevelKeyboardProc _proc = KeyEvents.HookCallback; // Delegate for the keyboard hook callback
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
@@ -41,7 +34,7 @@ namespace DTIWindow.MMI
         {
             // Initialize the menu bar button for the plugin
             _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("Traffic Info"));
-            var Events = new DTIWindow.MMI.Events();
+            var Events = new VatsysEvents();
             _opener.Item.Click += Events.OpenForm; // Attach event handler to open the form
 
             vatsys.MMI.AddCustomMenuItem(_opener); // Add the menu item to the vatSys menu
@@ -54,11 +47,12 @@ namespace DTIWindow.MMI
                 var mainForm = Application.OpenForms["Mainform"];
                 if (mainForm != null)
                 {
-                    mainForm.KeyUp += Events.KeyUp;
-                    mainForm.KeyDown += Events.KeyDown;
+                    var keyEvents = new KeyEvents();
+                    mainForm.KeyUp += keyEvents.KeyUp;
+                    mainForm.KeyDown += keyEvents.KeyDown;
                     mainForm.LostFocus += (s, e) =>
                     {
-                        Events.KeybindPressed = false;
+                        KeyEvents.KeybindPressed = false;
                     };
                 }
             });
@@ -79,18 +73,18 @@ namespace DTIWindow.MMI
 
         public void StartGlobalHook()
         {
-            if (DTIWindow.MMI.Events._hookID == IntPtr.Zero)
+            if (KeyEvents._hookID == IntPtr.Zero)
             {
-                DTIWindow.MMI.Events._hookID = SetHook(_proc);
+                KeyEvents._hookID = SetHook(_proc);
             }
         }
 
         public void StopGlobalHook()
         {
-            if (DTIWindow.MMI.Events._hookID != IntPtr.Zero)
+            if (KeyEvents._hookID != IntPtr.Zero)
             {
-                UnhookWindowsHookEx(DTIWindow.MMI.Events._hookID);
-                DTIWindow.MMI.Events._hookID = IntPtr.Zero;
+                UnhookWindowsHookEx(KeyEvents._hookID);
+                KeyEvents._hookID = IntPtr.Zero;
             }
         }
 
@@ -99,13 +93,8 @@ namespace DTIWindow.MMI
             using (Process curProcess = Process.GetCurrentProcess())
             using (ProcessModule curModule = curProcess.MainModule)
             {
-                return SetWindowsHookEx(DTIWindow.MMI.Events.WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
+                return SetWindowsHookEx(KeyEvents.WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
             }
-        }
-
-        public static void ResetKeybindPressed()
-        {
-            DTIWindow.MMI.Events.KeybindPressed = false;
         }
     }
 }
