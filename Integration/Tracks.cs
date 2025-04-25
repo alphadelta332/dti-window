@@ -2,20 +2,20 @@ using vatsys;
 using System.Reflection;
 using System.Collections.Concurrent;
 
-namespace DTIWindow.MMI
+namespace DTIWindow.Integration
 {
     public static class Tracks
     {
         /// Returns the currently selected (designated) track from vatSys.
         public static Track? GetDesignatedTrack()
         {
-            return vatsys.MMI.SelectedTrack;
+            return MMI.SelectedTrack;
         }
 
         /// Returns the callsign of the designated aircraft, or null if none is selected.
         public static string? GetDesignatedCallsign()
         {
-            return vatsys.MMI.SelectedTrack.GetPilot().Callsign;
+            return MMI.SelectedTrack.GetPilot().Callsign;
         }
     }
     public static class States
@@ -26,7 +26,7 @@ namespace DTIWindow.MMI
             try
             {
                 // Access the AircraftTracks field using reflection
-                var aircraftTracksField = typeof(vatsys.MMI).GetField("AircraftTracks", BindingFlags.Static | BindingFlags.NonPublic);
+                var aircraftTracksField = typeof(MMI).GetField("AircraftTracks", BindingFlags.Static | BindingFlags.NonPublic);
                 if (aircraftTracksField == null)
                 {
                     return "AircraftTracks field not found";

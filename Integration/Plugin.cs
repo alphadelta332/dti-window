@@ -5,7 +5,7 @@ using vatsys;
 using vatsys.Plugin;
 using DTIWindow.Events;
 
-namespace DTIWindow.MMI
+namespace DTIWindow.Integration
 {
     [Export(typeof(IPlugin))]
     public class DTIWindowPluginClass : Form, IPlugin
@@ -37,12 +37,12 @@ namespace DTIWindow.MMI
             var Events = new VatsysEvents();
             _opener.Item.Click += Events.OpenForm; // Attach event handler to open the form
 
-            vatsys.MMI.AddCustomMenuItem(_opener); // Add the menu item to the vatSys menu
+            MMI.AddCustomMenuItem(_opener); // Add the menu item to the vatSys menu
 
-            vatsys.MMI.SelectedTrackChanged += Events.TrackSelected; // Attach event handler for track selection changes
+            MMI.SelectedTrackChanged += Events.TrackSelected; // Attach event handler for track selection changes
 
             // Create keybind listeners when the main ASD is created
-            vatsys.MMI.InvokeOnGUI(() =>
+            MMI.InvokeOnGUI(() =>
             {
                 var mainForm = Application.OpenForms["Mainform"];
                 if (mainForm != null)

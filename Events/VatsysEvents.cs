@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using DTIWindow.Models;
+using DTIWindow.UI;
 using vatsys;
 
 namespace DTIWindow.Events
@@ -15,11 +16,11 @@ namespace DTIWindow.Events
         {
             try
             {
-                var track = vatsys.MMI.SelectedTrack; // Get the currently selected track
+                var track = MMI.SelectedTrack; // Get the currently selected track
 
                 if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && DTIWindow.Events.KeyEvents.KeybindPressed)
                 {
-                    vatsys.MMI.SelectedTrack = PreviousSelectedTrack; // Re-select the previous track
+                    MMI.SelectedTrack = PreviousSelectedTrack; // Re-select the previous track
 
                     // Ensure the AircraftViewer form is created and visible
                     OpenForm();
@@ -110,14 +111,14 @@ namespace DTIWindow.Events
             try
             {
                 // Get the TracksChanged event using reflection
-                EventInfo tracksChangedEvent = typeof(vatsys.MMI).GetEvent("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
+                EventInfo tracksChangedEvent = typeof(MMI).GetEvent("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
                 if (tracksChangedEvent == null)
                 {
                     return;
                 }
 
                 // Get the backing field for the TracksChanged event
-                FieldInfo? eventField = typeof(vatsys.MMI).GetField("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
+                FieldInfo? eventField = typeof(MMI).GetField("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
                 if (eventField == null)
                 {
                     return;
@@ -127,7 +128,7 @@ namespace DTIWindow.Events
                 Delegate? currentDelegate = eventField.GetValue(null) as Delegate;
 
                 // Create a delegate for the OnTracksChanged method
-                MethodInfo onTracksChangedMethod = typeof(AircraftViewer).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo onTracksChangedMethod = typeof(Window).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.NonPublic);
                 if (onTracksChangedMethod == null)
                 {
                     return;
@@ -159,7 +160,7 @@ namespace DTIWindow.Events
             try
             {
                 // Dynamically check if the event args are of type TracksChangedEventArgs
-                var tracksChangedEventArgsType = typeof(vatsys.MMI).Assembly.GetType("vatsys.TracksChangedEventArgs");
+                var tracksChangedEventArgsType = typeof(MMI).Assembly.GetType("vatsys.TracksChangedEventArgs");
                 if (tracksChangedEventArgsType != null && tracksChangedEventArgsType.IsInstanceOfType(e))
                 {
                     // Access the 'Track' property

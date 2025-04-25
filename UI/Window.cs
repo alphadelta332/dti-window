@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using DTIWindow.Models;
 using DTIWindow.Events;
+using DTIWindow.Integration;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 
@@ -82,7 +83,7 @@ namespace DTIWindow.UI
                     }
 
                     // Retrieve the HMI state for the aircraft's callsign
-                    string hmiState = DTIWindow.MMI.States.GetHMIState(aircraft.Callsign);
+                    string hmiState = States.GetHMIState(aircraft.Callsign);
 
                     // Retrieve the HMI state and color
                     var (state, color) = Colours.GetHMIStateAndColor(hmiState);

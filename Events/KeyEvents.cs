@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using DTIWindow.MMI;
+using DTIWindow.Integration;
 
 namespace DTIWindow.Events
 {
