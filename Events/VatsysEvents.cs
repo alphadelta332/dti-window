@@ -9,7 +9,7 @@ namespace DTIWindow.Events
     public class VatsysEvents : Form
     {
         public Track? PreviousSelectedTrack; // Stores the previously selected radar track
-        private UI.Window? Window; // Reference to the DTI Window form
+        private Window? Window; // Reference to the DTI Window form
 
         // Event handler for when a radar track is selected
         public void TrackSelected(object sender, EventArgs e)
@@ -18,7 +18,7 @@ namespace DTIWindow.Events
             {
                 var track = MMI.SelectedTrack; // Get the currently selected track
 
-                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && DTIWindow.Events.KeyEvents.KeybindPressed)
+                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeyEvents.KeybindPressed)
                 {
                     MMI.SelectedTrack = PreviousSelectedTrack; // Re-select the previous track
 
@@ -35,10 +35,10 @@ namespace DTIWindow.Events
                     var childAircraft = AircraftManager.Instance.GetOrCreateAircraft(track.GetPilot().Callsign);
 
                     // Create a traffic pairing between the parent and child aircraft
-                    var pairings = new DTIWindow.Models.Pairings();
+                    var pairings = new Pairings();
                     pairings.CreateTrafficPairing(parentAircraft, childAircraft);
 
-                    DTIWindow.Events.KeyEvents.ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
+                    KeyEvents.ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
                     return;
                 }
 
@@ -96,7 +96,7 @@ namespace DTIWindow.Events
                     // Use the shared AircraftList from AircraftManager
                     var aircraftList = AircraftManager.AircraftList;
                     var trafficPairings = Pairings.GetTrafficPairings();
-                    Window = new DTIWindow.UI.Window(aircraftList, trafficPairings);
+                    Window = new Window(aircraftList, trafficPairings);
                 }
 
                 Window.Show(Form.ActiveForm);
@@ -174,7 +174,7 @@ namespace DTIWindow.Events
 
                 // Refresh the aircraft display
                 var aircraftList = AircraftManager.AircraftList;
-                var windowInstance = new DTIWindow.UI.Window(aircraftList, new Dictionary<Aircraft, List<Aircraft>>());
+                var windowInstance = new Window(aircraftList, new Dictionary<Aircraft, List<Aircraft>>());
                 windowInstance.PopulateAircraftDisplay();
             }
             catch (Exception)

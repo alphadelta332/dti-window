@@ -57,7 +57,7 @@ namespace DTIWindow.Integration
                 }
             });
 
-            StartGlobalHook(); // Start the global keyboard hook
+            // StartGlobalHook(); // Start the global keyboard hook
         }
 
         // Required for plugin to function (no implementation needed here)

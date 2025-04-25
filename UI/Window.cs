@@ -146,6 +146,7 @@ namespace DTIWindow.UI
 
                         // Set event handlers for mouse actions on child labels
                         var mouseEvents = new MouseEvents();
+                        Debug.WriteLine("MouseEvents instance created");
                         childLabel.MouseDown += (sender, e) =>
                         {
                             Debug.WriteLine($"MouseDown event attached for child: {child.Callsign}");

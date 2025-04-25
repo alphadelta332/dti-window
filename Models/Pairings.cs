@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace DTIWindow.Models
 {
     // Manages traffic pairings between parent and child aircraft
@@ -47,7 +45,7 @@ namespace DTIWindow.Models
             }
 
             // Refresh the UI after all updates
-            var windowInstance = Application.OpenForms.OfType<DTIWindow.UI.Window>().FirstOrDefault();
+            var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
             windowInstance?.PopulateAircraftDisplay();
         }
 
