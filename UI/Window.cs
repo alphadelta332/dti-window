@@ -146,8 +146,16 @@ namespace DTIWindow.UI
 
                         // Set event handlers for mouse actions on child labels
                         var mouseEvents = new MouseEvents();
-                        childLabel.MouseDown += (sender, e) => mouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
-                        childLabel.MouseUp += (sender, e) => mouseEvents.ChildLabel_MouseUp(sender, e, aircraft, child);
+                        childLabel.MouseDown += (sender, e) =>
+                        {
+                            Debug.WriteLine($"MouseDown event attached for child: {child.Callsign}");
+                            mouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
+                        };
+                        childLabel.MouseUp += (sender, e) =>
+                        {
+                            Debug.WriteLine($"MouseUp event attached for child: {child.Callsign}");
+                            mouseEvents.ChildLabel_MouseUp(sender, e, aircraft, child);
+                        };
 
                         aircraftPanel.Controls.Add(childLabel);
                         yOffset += 20;

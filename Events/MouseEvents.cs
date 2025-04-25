@@ -39,13 +39,14 @@ namespace DTIWindow.Events
                 childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
 
                 // Perform the action based on the mouse button released
+                Debug.WriteLine($"ChildLabel_MouseUp called for child: {child.Callsign}, button: {e.Button}");
+
                 // Release mouse input
                 childLabel.Capture = false;
 
                 // Reset the background color when the mouse button is released
                 childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
 
-                // Perform the action based on the mouse button released
                 try
                 {
                     if (e.Button == MouseButtons.Left)
@@ -55,35 +56,48 @@ namespace DTIWindow.Events
                     }
                     else if (e.Button == MouseButtons.Right)
                     {
-                        // Set the status to "Unpassed"
+                        Debug.WriteLine($"Right-click detected for child: {child.Callsign}");
                         child.Status = "Unpassed";
                     }
                     else if (e.Button == MouseButtons.Middle)
                     {
+                        Debug.WriteLine($"Middle-click detected for child: {child.Callsign}");
+
                         // Remove the child from the parent's children list
                         parent.Children.Remove(child);
+                        Debug.WriteLine($"Removed child: {child.Callsign} from parent: {parent.Callsign}");
 
                         // If the parent has no more children, remove the parent from the aircraft list
                         if (parent.Children.Count == 0)
                         {
                             AircraftManager.AircraftList.Remove(parent);
+                            Debug.WriteLine($"Removed parent: {parent.Callsign} from AircraftManager.AircraftList");
                         }
                     }
 
                     // Refresh the existing Window instance
                     var windowInstance = Application.OpenForms.OfType<DTIWindow.UI.Window>().FirstOrDefault();
-                    windowInstance?.PopulateAircraftDisplay();
+                    if (windowInstance != null)
+                    {
+                        Debug.WriteLine("Refreshing the UI");
+                        windowInstance.PopulateAircraftDisplay();
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Window instance not found");
+                    }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Handle exceptions silently in release mode
+                    Debug.WriteLine($"Error in ChildLabel_MouseUp: {ex.Message}");
                 }
                 finally
                 {
-                    activeChildLabel = null;
+                    MouseEvents.activeChildLabel = null;
                 }
             }
         }
+
         protected void OnPreviewClientMouseUp(BaseMouseEventArgs e)
         {
             Debug.WriteLine($"OnPreviewClientMouseUp called with button: {e.Button}");
@@ -122,28 +136,28 @@ namespace DTIWindow.Events
                 return; // Prevent the default behavior if no label is found
             }
 
-            // base.OnPreviewClientMouseUp(e); // Call the base method for other mouse buttons
+            base.OnPreviewClientMouseUp(e); // Call the base method for other mouse buttons
         }
 
         private void HandleMiddleClick(Aircraft parent, ChildAircraft child)
         {
             try
             {
-                Debug.WriteLine($"HandleMiddleClick called for parent '{parent.Callsign}' and child '{child.Callsign}'");
+                Debug.WriteLine($"HandleMiddleClick called for parent: {parent.Callsign}, child: {child.Callsign}");
 
                 // Remove the child from the parent's children list
                 parent.Children.Remove(child);
-                Debug.WriteLine($"Removed child '{child.Callsign}' from parent '{parent.Callsign}'");
+                Debug.WriteLine($"Removed child: {child.Callsign} from parent: {parent.Callsign}");
 
                 // If the parent has no more children, remove the parent from the aircraft list
                 if (parent.Children.Count == 0)
                 {
                     AircraftManager.AircraftList.Remove(parent);
-                    Debug.WriteLine($"Removed parent '{parent.Callsign}' from AircraftManager.AircraftList");
+                    Debug.WriteLine($"Removed parent: {parent.Callsign} from AircraftManager.AircraftList");
                 }
 
                 // Refresh the UI to reflect the change
-                var windowInstance = Application.OpenForms.OfType<DTIWindow.UI.Window>().FirstOrDefault();
+                var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
                 if (windowInstance != null)
                 {
                     Debug.WriteLine("Refreshing the UI");
