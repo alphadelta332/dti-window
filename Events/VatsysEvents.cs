@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Reflection;
 using DTIWindow.Models;
 using DTIWindow.UI;
-using DTIWindow.Integration;
 using vatsys;
 
 namespace DTIWindow.Events
@@ -19,7 +18,7 @@ namespace DTIWindow.Events
             {
                 var track = MMI.SelectedTrack; // Get the currently selected track
 
-                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && Integration.DTIWindow.KeybindPressed)
+                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeyEvents.KeybindPressed)
                 {
                     MMI.SelectedTrack = PreviousSelectedTrack; // Re-select the previous track
 
@@ -39,7 +38,7 @@ namespace DTIWindow.Events
                     var pairings = new Pairings();
                     pairings.CreateTrafficPairing(parentAircraft, childAircraft);
 
-                    Integration.DTIWindow.ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
+                    KeyEvents.ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
                     return;
                 }
 
