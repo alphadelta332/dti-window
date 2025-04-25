@@ -30,6 +30,8 @@ namespace DTIWindow.Events
         // Handles mouse up on child aircraft labels
         public void ChildLabel_MouseUp(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
         {
+            Debug.WriteLine($"ChildLabel_MouseUp called for child: {child.Callsign}, button: {e.Button}");
+            
             if (sender is Label childLabel)
             {
                 // Release mouse input
@@ -76,7 +78,7 @@ namespace DTIWindow.Events
                     }
 
                     // Refresh the existing Window instance
-                    var windowInstance = Application.OpenForms.OfType<DTIWindow.UI.Window>().FirstOrDefault();
+                    var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
                     if (windowInstance != null)
                     {
                         Debug.WriteLine("Refreshing the UI");
@@ -93,11 +95,11 @@ namespace DTIWindow.Events
                 }
                 finally
                 {
-                    MouseEvents.activeChildLabel = null;
+                    activeChildLabel = null;
                 }
             }
         }
-
+        
         protected override void OnPreviewClientMouseUp(BaseMouseEventArgs e)
         {
             Debug.WriteLine($"OnPreviewClientMouseUp called with button: {e.Button}");

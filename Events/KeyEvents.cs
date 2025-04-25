@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using DTIWindow.Integration;
 
 namespace DTIWindow.Events
 {
@@ -27,7 +26,7 @@ namespace DTIWindow.Events
                 }
             }
 
-            return DTIWindowPluginClass.CallNextHookEx(_hookID, nCode, wParam, lParam); // Pass the event to the next hook in the chain
+            return Integration.DTIWindow.CallNextHookEx(_hookID, nCode, wParam, lParam); // Pass the event to the next hook in the chain
         }
 
         // Event handler for when a key is released

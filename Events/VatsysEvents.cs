@@ -2,11 +2,12 @@ using System.Diagnostics;
 using System.Reflection;
 using DTIWindow.Models;
 using DTIWindow.UI;
+using DTIWindow.Integration;
 using vatsys;
 
 namespace DTIWindow.Events
 {
-    public class VatsysEvents : Form
+    public class VatsysEvents : BaseForm
     {
         public Track? PreviousSelectedTrack; // Stores the previously selected radar track
         private Window? Window; // Reference to the DTI Window form
@@ -18,7 +19,7 @@ namespace DTIWindow.Events
             {
                 var track = MMI.SelectedTrack; // Get the currently selected track
 
-                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeyEvents.KeybindPressed)
+                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && Integration.DTIWindow.KeybindPressed)
                 {
                     MMI.SelectedTrack = PreviousSelectedTrack; // Re-select the previous track
 
@@ -38,7 +39,7 @@ namespace DTIWindow.Events
                     var pairings = new Pairings();
                     pairings.CreateTrafficPairing(parentAircraft, childAircraft);
 
-                    KeyEvents.ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
+                    Integration.DTIWindow.ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
                     return;
                 }
 

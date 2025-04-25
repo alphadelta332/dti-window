@@ -8,7 +8,7 @@ using DTIWindow.Events;
 namespace DTIWindow.Integration
 {
     [Export(typeof(IPlugin))]
-    public class DTIWindowPluginClass : Form, IPlugin
+    public class DTIWindow : BaseForm, IPlugin
     {
         private readonly CustomToolStripMenuItem _opener; // Menu button for opening the DTI Window
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
@@ -30,7 +30,7 @@ namespace DTIWindow.Integration
         public new string Name => "DTI Window"; // Plugin name
 
         // Constructor for the DTIWindow plugin
-        public DTIWindowPluginClass()
+        public DTIWindow()
         {
             // Initialize the menu bar button for the plugin
             _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("Traffic Info"));
@@ -57,7 +57,7 @@ namespace DTIWindow.Integration
                 }
             });
 
-            // StartGlobalHook(); // Start the global keyboard hook
+            StartGlobalHook(); // Start the global keyboard hook
         }
 
         // Required for plugin to function (no implementation needed here)
@@ -78,7 +78,6 @@ namespace DTIWindow.Integration
                 KeyEvents._hookID = SetHook(_proc);
             }
         }
-
         public void StopGlobalHook()
         {
             if (KeyEvents._hookID != IntPtr.Zero)
