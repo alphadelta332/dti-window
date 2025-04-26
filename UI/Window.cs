@@ -10,17 +10,20 @@ namespace DTIWindow.UI
 {
     public class Window : BaseForm
     {
-        private Panel aircraftPanel; // UI panel to display the list of aircraft
+        public Panel aircraftPanel; // UI panel to display the list of aircraft
         private BindingList<Aircraft> aircraftList; // List of aircraft in the system
         private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores traffic pairings between aircraft
         private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
         private Aircraft? designatedAircraft = null; // Currently designated aircraft
+        private bool middleclickclose = false; // Prevent middle-click from closing the form
 
         // Constructor for the AircraftViewer form
         public Window(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
         {
             this.aircraftList = aircraftList; // Initialize the aircraft list
             this.trafficPairings = trafficPairings; // Initialize the traffic pairings dictionary
+            // Prevent middle-click from closing the form
+            middleclickclose = false;
 
             // Register an event to refresh the UI when the aircraft list changes
             this.aircraftList.ListChanged += AircraftList_ListChanged;

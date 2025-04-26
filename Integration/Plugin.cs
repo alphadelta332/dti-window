@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -32,6 +33,26 @@ namespace DTIWindow.Integration
         // Constructor for the DTIWindow plugin
         public DTIWindow()
         {
+            // Add global exception handlers
+            Application.ThreadException += (sender, args) =>
+            {
+                Debug.WriteLine($"Unhandled UI thread exception: {args.Exception.Message}");
+                Debug.WriteLine($"Stack Trace: {args.Exception.StackTrace}");
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                if (args.ExceptionObject is Exception ex)
+                {
+                    Debug.WriteLine($"Unhandled exception in AppDomain: {ex.Message}");
+                    Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                }
+                else
+                {
+                    Debug.WriteLine("Unhandled exception in AppDomain: Non-Exception object");
+                }
+            };
+
             // Initialize the menu bar button for the plugin
             _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("Traffic Info"));
             var Events = new VatsysEvents();

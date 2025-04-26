@@ -1,5 +1,7 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using DTIWindow.Models;
+using DTIWindow.UI;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 
@@ -7,7 +9,7 @@ namespace DTIWindow.Events
 {
     public class MouseEvents : BaseForm
     {
-        private Panel aircraftPanel = new Panel(); // UI panel to display the list of aircraft
+        private bool middleclickclose = false; // Prevent middle-click from closing the form
         public static Label? activeChildLabel = null; // Tracks the currently active child label
         public void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
         {
@@ -106,31 +108,53 @@ namespace DTIWindow.Events
 
             if (e.Button == MouseButtons.Middle)
             {
+                // Prevent the default behavior in BaseForm
+                e.Handled = true;
+                
                 // Get the mouse position relative to the aircraftPanel
-                Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
-                Debug.WriteLine($"Mouse position: {mousePosition}");
+                var windowInstance = Application.OpenForms.OfType<Window>().FirstOrDefault();
+                if (windowInstance != null)
+                {
+                    var WindowInstance = Application.OpenForms.OfType<Window>().FirstOrDefault();
+                    if (WindowInstance != null)
+                    {
+                        Point mousePosition = WindowInstance.aircraftPanel.PointToClient(Cursor.Position);
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Window instance not found");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("Window instance not found");
+                }
+                Debug.WriteLine($"Mouse position: {MousePosition}");
 
                 // Iterate through the child controls of the aircraftPanel
-                foreach (Control control in aircraftPanel.Controls)
+                if (windowInstance?.aircraftPanel != null)
                 {
-                    if (control is Label childLabel && control.Bounds.Contains(mousePosition))
+                    foreach (Control control in windowInstance.aircraftPanel.Controls)
                     {
-                        Debug.WriteLine($"Middle-click detected on label with text: {childLabel.Text}");
-
-                        // Find the parent and child objects associated with the label
-                        foreach (var parent in AircraftManager.AircraftList)
+                        if (control is Label childLabel && control.Bounds.Contains(MousePosition))
                         {
-                            var child = parent.Children.FirstOrDefault(c => c.Callsign == childLabel.Text);
-                            if (child != null)
-                            {
-                                Debug.WriteLine($"Found parent '{parent.Callsign}' and child '{child.Callsign}'");
-                                HandleMiddleClick(parent, child);
-                                break;
-                            }
-                        }
+                            Debug.WriteLine($"Middle-click detected on label with text: {childLabel.Text}");
 
-                        // Prevent the default behavior by not calling the base method for middle-click
-                        return;
+                            // Find the parent and child objects associated with the label
+                            foreach (var parent in AircraftManager.AircraftList)
+                            {
+                                var child = parent.Children.FirstOrDefault(c => c.Callsign == childLabel.Text);
+                                if (child != null)
+                                {
+                                    Debug.WriteLine($"Found parent '{parent.Callsign}' and child '{child.Callsign}'");
+                                    HandleMiddleClick(parent, child);
+                                    break;
+                                }
+                            }
+
+                            // Prevent the default behavior by not calling the base method for middle-click
+                            return;
+                        }
                     }
                 }
 
@@ -198,26 +222,37 @@ namespace DTIWindow.Events
                         this.Capture = true;
 
                         // Get the mouse position relative to the aircraftPanel
-                        Point mousePosition = aircraftPanel.PointToClient(Cursor.Position);
+                        var windowInstance = Application.OpenForms.OfType<Window>().FirstOrDefault();
+                        if (windowInstance != null)
+                        {
+                            Point mousePosition = windowInstance.aircraftPanel.PointToClient(Cursor.Position);
+                        }
+                        else
+                        {
+                            Debug.WriteLine("Window instance not found");
+                        }
 
                         // Check if the mouse is over a child label
-                        foreach (Control control in aircraftPanel.Controls)
+                        if (windowInstance?.aircraftPanel != null)
                         {
-                            if (control is Label childLabel && childLabel.Bounds.Contains(mousePosition))
+                            foreach (Control control in windowInstance.aircraftPanel.Controls)
                             {
-                                Debug.WriteLine($"Middle-click detected on label with text: {childLabel.Text}");
+                                if (control is Label childLabel && childLabel.Bounds.Contains(MousePosition))
+                                {
+                                    Debug.WriteLine($"Middle-click detected on label with text: {childLabel.Text}");
 
-                                // Highlight the label background
-                                childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick);
+                                    // Highlight the label background
+                                    childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick);
 
-                                // Change the text color to white
-                                childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick);
+                                    // Change the text color to white
+                                    childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick);
 
-                                // Track the active child label
-                                ChildAircraft.activeChildLabel = childLabel;
-                                Debug.WriteLine($"Active child label set to: {childLabel.Text}");
+                                    // Track the active child label
+                                    ChildAircraft.activeChildLabel = childLabel;
+                                    Debug.WriteLine($"Active child label set to: {childLabel.Text}");
 
-                                return; // Prevent further processing
+                                    return; // Prevent further processing
+                                }
                             }
                         }
 
@@ -282,6 +317,11 @@ namespace DTIWindow.Events
                 Debug.WriteLine($"Unhandled exception in WndProc: {ex.Message}");
                 Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
             }
+        }
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            Debug.WriteLine("MouseEvents form is closing");
+            base.OnClosing(e);
         }
     }
 }

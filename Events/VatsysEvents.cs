@@ -99,7 +99,7 @@ namespace DTIWindow.Events
                     Window = new Window(aircraftList, trafficPairings);
                 }
 
-                Window.Show(Form.ActiveForm);
+                Window.Show(ActiveForm);
             }
             catch (Exception ex)
             {

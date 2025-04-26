@@ -1,9 +1,8 @@
 using System.ComponentModel;
-using vatsys;
 
 namespace DTIWindow.Models
 {
-    public class AircraftManager : BaseForm
+    public class AircraftManager
     {
         private static AircraftManager? _instance;
         public static AircraftManager Instance => _instance ??= new AircraftManager();

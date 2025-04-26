@@ -1,8 +1,9 @@
 using System.Runtime.InteropServices;
+using vatsys;
 
 namespace DTIWindow.Events
 {
-    public class KeyEvents : Form
+    public class KeyEvents : BaseForm
     {
         public const int WH_KEYBOARD_LL = 13; // Low-level keyboard hook constant
         public const int WM_KEYDOWN = 0x0100; // Windows message for key down
