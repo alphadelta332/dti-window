@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using DTIWindow.Models;
 using DTIWindow.UI;
 using vatsys;
@@ -8,7 +9,6 @@ namespace DTIWindow.Events
 {
     public class MouseEvents : BaseForm
     {
-        private bool middleclickclose = false; // Prevent middle-click from closing the form
         public static Label? activeChildLabel = null; // Tracks the currently active child label
         public void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
         {
@@ -154,8 +154,9 @@ namespace DTIWindow.Events
                     windowInstance.PopulateAircraftDisplay();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -257,9 +258,10 @@ namespace DTIWindow.Events
                 // Call the base method for other messages
                 base.WndProc(ref m);
             }
-            catch (Exception)
-            {
-            }
+            catch (Exception ex)
+{
+    Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
+}
         }
         protected override void OnClosing(CancelEventArgs e)
         {

@@ -3,6 +3,7 @@ using DTIWindow.Models;
 using DTIWindow.UI;
 using DTIWindow.Integration;
 using vatsys;
+using System.Diagnostics;
 
 namespace DTIWindow.Events
 {
@@ -63,8 +64,9 @@ namespace DTIWindow.Events
                     .FirstOrDefault();
                 windowInstance?.PopulateAircraftDisplay();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -83,8 +85,9 @@ namespace DTIWindow.Events
 
                 Window.Show(ActiveForm);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
         public void Initialize()
@@ -102,7 +105,7 @@ namespace DTIWindow.Events
                 FieldInfo? eventField = typeof(MMI).GetField("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
                 if (eventField == null)
                 {
-                return;
+                    return;
                 }
 
                 // Get the current value of the event (the delegate)
@@ -112,14 +115,14 @@ namespace DTIWindow.Events
                 MethodInfo onTracksChangedMethod = typeof(VatsysEvents).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 if (onTracksChangedMethod == null)
                 {
-                return;
+                    return;
                 }
 
                 // Get the event handler type (EventHandler<TracksChangedEventArgs>)
-                Type? eventHandlerType = tracksChangedEvent.EventHandlerType;
+                Type? eventHandlerType = typeof(EventHandler<>).MakeGenericType(typeof(MMI).Assembly.GetType("vatsys.TracksChangedEventArgs"));
                 if (eventHandlerType == null)
                 {
-                return;
+                    return;
                 }
 
                 // Create a delegate of the correct type for the event handler
@@ -130,12 +133,10 @@ namespace DTIWindow.Events
 
                 // Set the combined delegate back to the event field
                 eventField.SetValue(null, combinedDelegate);
-
-                // Subscribe to the TracksChanged event
-                tracksChangedEvent.AddEventHandler(null, newDelegate);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Error initializing TracksChanged subscription: {ex.Message}\n{ex.StackTrace}");
             }
         }
         private void OnTracksChanged(object sender, EventArgs e)
@@ -192,8 +193,9 @@ namespace DTIWindow.Events
                 .FirstOrDefault();
             windowInstance?.PopulateAircraftDisplay();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
     }

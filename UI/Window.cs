@@ -5,6 +5,7 @@ using DTIWindow.Integration;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace DTIWindow.UI
 {
@@ -14,7 +15,6 @@ namespace DTIWindow.UI
         private BindingList<Aircraft> aircraftList; // List of aircraft in the system
         private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores traffic pairings between aircraft
         private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
-        private bool middleclickclose = false; // Prevent middle-click from closing the form
 
         // Constructor for the AircraftViewer form
         public Window(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
@@ -29,8 +29,9 @@ namespace DTIWindow.UI
                     field.SetValue(this, false);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
 
             // Register an event to refresh the UI when the aircraft list changes
@@ -81,6 +82,12 @@ namespace DTIWindow.UI
         // Populates the aircraft display with UI elements
         public void PopulateAircraftDisplay()
         {
+            if (InvokeRequired)
+            {
+                Invoke(new MethodInvoker(PopulateAircraftDisplay));
+                return;
+            }
+
             try
             {
                 aircraftPanel.Controls.Clear(); // Clear all previous UI elements
@@ -169,8 +176,9 @@ namespace DTIWindow.UI
                     yOffset += 10;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
