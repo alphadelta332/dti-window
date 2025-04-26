@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using DTIWindow.Models;
 using DTIWindow.UI;
@@ -96,31 +95,31 @@ namespace DTIWindow.Events
                 EventInfo tracksChangedEvent = typeof(MMI).GetEvent("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
                 if (tracksChangedEvent == null)
                 {
-                    return;
+                return;
                 }
 
                 // Get the backing field for the TracksChanged event
                 FieldInfo? eventField = typeof(MMI).GetField("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
                 if (eventField == null)
                 {
-                    return;
+                return;
                 }
 
                 // Get the current value of the event (the delegate)
                 Delegate? currentDelegate = eventField.GetValue(null) as Delegate;
 
                 // Create a delegate for the OnTracksChanged method
-                MethodInfo onTracksChangedMethod = typeof(Window).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo onTracksChangedMethod = typeof(VatsysEvents).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 if (onTracksChangedMethod == null)
                 {
-                    return;
+                return;
                 }
 
                 // Get the event handler type (EventHandler<TracksChangedEventArgs>)
                 Type? eventHandlerType = tracksChangedEvent.EventHandlerType;
                 if (eventHandlerType == null)
                 {
-                    return;
+                return;
                 }
 
                 // Create a delegate of the correct type for the event handler
@@ -131,66 +130,67 @@ namespace DTIWindow.Events
 
                 // Set the combined delegate back to the event field
                 eventField.SetValue(null, combinedDelegate);
+
+                // Subscribe to the TracksChanged event
+                tracksChangedEvent.AddEventHandler(null, newDelegate);
             }
             catch (Exception)
             {
-                // Handle exceptions silently in release mode
             }
         }
-        public void OnTracksChanged(object sender, object e)
+        private void OnTracksChanged(object sender, EventArgs e)
         {
-            Debug.WriteLine("OnTracksChanged event triggered.");
             try
             {
-                // Dynamically check if the event args are of type TracksChangedEventArgs
-                var tracksChangedEventArgsType = typeof(MMI).Assembly.GetType("vatsys.TracksChangedEventArgs");
-                if (tracksChangedEventArgsType != null && tracksChangedEventArgsType.IsInstanceOfType(e))
+            // Dynamically check if the event args are of type TracksChangedEventArgs
+            var tracksChangedEventArgsType = typeof(MMI).Assembly.GetType("vatsys.TracksChangedEventArgs");
+            if (tracksChangedEventArgsType != null && tracksChangedEventArgsType.IsInstanceOfType(e))
+            {
+                // Access the 'Track' property
+                var trackProperty = tracksChangedEventArgsType.GetProperty("Track", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                var track = trackProperty?.GetValue(e);
+
+                // Access the 'Removed' property
+                var removedProperty = tracksChangedEventArgsType.GetProperty("Removed", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                bool removed = removedProperty != null && (bool)removedProperty.GetValue(e);
+
+                // If the track is removed, skip further processing
+                if (removed)
                 {
-                    // Access the 'Track' property
-                    var trackProperty = tracksChangedEventArgsType.GetProperty("Track", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                    var track = trackProperty?.GetValue(e);
-
-                    // Access the 'Removed' property
-                    var removedProperty = tracksChangedEventArgsType.GetProperty("Removed", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                    bool removed = removedProperty != null && (bool)removedProperty.GetValue(e);
-
-                    // If the track is removed, skip further processing
-                    if (removed)
-                    {
-                        return;
-                    }
+                return;
                 }
+            }
 
-                // Retrieve the designated aircraft callsign
-                var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
+            // Retrieve the designated aircraft callsign
+            var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
 
-                if (string.IsNullOrEmpty(designatedAircraftCallsign))
-                {
-                    return;
-                }
+            if (string.IsNullOrEmpty(designatedAircraftCallsign))
+            {
+                return;
+            }
 
-                // Clear the designation for all aircraft
-                foreach (var aircraft in AircraftManager.AircraftList)
-                {
-                    aircraft.designatedAircraft = null;
-                }
+            // Clear the designation for all aircraft
+            foreach (var aircraft in AircraftManager.AircraftList)
+            {
+                aircraft.designatedAircraft = null;
+            }
 
-                // Find the aircraft corresponding to the designated callsign
-                var designatedAircraft = AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == designatedAircraftCallsign);
+            // Find the aircraft corresponding to the designated callsign
+            var designatedAircraft = AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == designatedAircraftCallsign);
 
-                if (designatedAircraft == null)
-                {
-                    return;
-                }
+            if (designatedAircraft == null)
+            {
+                return;
+            }
 
-                // Set the new designated aircraft
-                designatedAircraft.SetDesignatedAircraft();
+            // Set the new designated aircraft
+            designatedAircraft.SetDesignatedAircraft();
 
-                // Refresh the aircraft display
-                var windowInstance = Application.OpenForms
-                    .OfType<Window>()
-                    .FirstOrDefault();
-                windowInstance?.PopulateAircraftDisplay();
+            // Refresh the aircraft display
+            var windowInstance = Application.OpenForms
+                .OfType<Window>()
+                .FirstOrDefault();
+            windowInstance?.PopulateAircraftDisplay();
             }
             catch (Exception)
             {
