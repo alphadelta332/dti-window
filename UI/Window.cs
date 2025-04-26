@@ -5,6 +5,7 @@ using DTIWindow.Events;
 using DTIWindow.Integration;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
+using System.Reflection;
 
 namespace DTIWindow.UI
 {
@@ -22,8 +23,23 @@ namespace DTIWindow.UI
         {
             this.aircraftList = aircraftList; // Initialize the aircraft list
             this.trafficPairings = trafficPairings; // Initialize the traffic pairings dictionary
-            // Prevent middle-click from closing the form
-            middleclickclose = false;
+            try
+            {
+                var field = typeof(BaseForm).GetField("middleclickclose", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (field != null)
+                {
+                    field.SetValue(this, false);
+                    Debug.WriteLine("middleclickclose successfully disabled via reflection");
+                }
+                else
+                {
+                    Debug.WriteLine("Failed to find 'middleclickclose' field via reflection");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error setting middleclickclose: {ex.Message}");
+            }
 
             // Register an event to refresh the UI when the aircraft list changes
             this.aircraftList.ListChanged += AircraftList_ListChanged;
