@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using DTIWindow.Integration;
 
 namespace DTIWindow.Models
 {
@@ -7,7 +8,7 @@ namespace DTIWindow.Models
         public string Name { get; set; } // Name of the aircraft
         public string Callsign { get; set; } // Callsign of the aircraft
         public BindingList<ChildAircraft> Children { get; set; } = new BindingList<ChildAircraft>(); // List of child aircraft associated with this aircraft
-        private Aircraft? designatedAircraft = null; // Currently designated aircraft
+        public Aircraft? designatedAircraft = null; // Currently designated aircraft
 
         public Aircraft(string name, string callsign)
         {
@@ -32,15 +33,24 @@ namespace DTIWindow.Models
         {
             return Children.Count > 0;
         }
-        public void SetDesignatedAircraft(Aircraft? aircraft)
+        public void SetDesignatedAircraft()
         {
-            designatedAircraft = aircraft;
+            // Retrieve the designated aircraft from the Tracks class
+            var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
 
-            // Refresh the existing Window instance
-            var windowInstance = Application.OpenForms
-                .OfType<Form>()
-                .FirstOrDefault(form => form.Name == "Window");
-            windowInstance?.GetType().GetMethod("PopulateAircraftDisplay")?.Invoke(windowInstance, null);
+            if (string.IsNullOrEmpty(designatedAircraftCallsign))
+            {
+                return; // Exit if no valid designated aircraft is found
+            }
+
+            // Ensure this aircraft matches the designated callsign
+            if (this.Callsign != designatedAircraftCallsign)
+            {
+                return;
+            }
+
+            // Set this aircraft as the designated aircraft
+            this.designatedAircraft = this;
         }
     }
 }

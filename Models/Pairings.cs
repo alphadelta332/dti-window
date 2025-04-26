@@ -1,3 +1,4 @@
+using DTIWindow.UI;
 using vatsys;
 
 namespace DTIWindow.Models
@@ -7,7 +8,6 @@ namespace DTIWindow.Models
     {        
         private static readonly Dictionary<string, List<string>> trafficPairs = new Dictionary<string, List<string>>();
         private static Dictionary<Aircraft, List<Aircraft>> trafficPairings = new Dictionary<Aircraft, List<Aircraft>>(); // Stores traffic pairings between aircraft
-        private Aircraft? designatedAircraft = null; // Currently designated aircraft
 
         // Creates a traffic pairing between two aircraft
         public void CreateTrafficPairing(Aircraft firstAircraft, Aircraft secondAircraft)
@@ -41,14 +41,15 @@ namespace DTIWindow.Models
             }
 
             // Ensure the designated aircraft is set (if not already set)
-            if (designatedAircraft == null)
+            if (firstAircraft.designatedAircraft == null)
             {
-                designatedAircraft = firstAircraft; // Default to the first aircraft in the pairing
+                firstAircraft.designatedAircraft = firstAircraft; // Default to the first aircraft in the pairing
             }
 
             // Refresh the UI after all updates
             var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
             windowInstance?.PopulateAircraftDisplay();
+            windowInstance?.CheckAndSetDesignatedAircraft();
         }
 
         // Retrieves the list of child callsigns for a given parent callsign

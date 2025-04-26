@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using DTIWindow.Models;
 using DTIWindow.Events;
 using DTIWindow.Integration;
@@ -15,7 +14,6 @@ namespace DTIWindow.UI
         private BindingList<Aircraft> aircraftList; // List of aircraft in the system
         private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores traffic pairings between aircraft
         private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
-        private Aircraft? designatedAircraft = null; // Currently designated aircraft
         private bool middleclickclose = false; // Prevent middle-click from closing the form
 
         // Constructor for the AircraftViewer form
@@ -29,16 +27,10 @@ namespace DTIWindow.UI
                 if (field != null)
                 {
                     field.SetValue(this, false);
-                    Debug.WriteLine("middleclickclose successfully disabled via reflection");
-                }
-                else
-                {
-                    Debug.WriteLine("Failed to find 'middleclickclose' field via reflection");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Error setting middleclickclose: {ex.Message}");
             }
 
             // Register an event to refresh the UI when the aircraft list changes
@@ -66,6 +58,9 @@ namespace DTIWindow.UI
             // Initialize the TracksChanged event subscription
             var eventsInstance = new VatsysEvents();
             eventsInstance.Initialize();
+
+            // Check and set the designated aircraft after populating the display
+            CheckAndSetDesignatedAircraft();
         }
 
         // Event handler to refresh the UI when the aircraft list changes
@@ -88,19 +83,12 @@ namespace DTIWindow.UI
         {
             try
             {
-                Debug.WriteLine($"Populating display with {aircraftList.Count} aircraft");
                 aircraftPanel.Controls.Clear(); // Clear all previous UI elements
                 int yOffset = 10; // Y-positioning for UI elements
 
                 // Display traffic pairings for each aircraft
                 foreach (var aircraft in aircraftList)
                 {
-                    Debug.WriteLine($"Parent aircraft: {aircraft.Callsign}, Children: {aircraft.Children.Count}");
-                    foreach (var child in aircraft.Children)
-                    {
-                        Debug.WriteLine($"  Child aircraft: {child.Callsign}");
-                    }
-
                     // Retrieve the HMI state for the aircraft's callsign
                     string hmiState = States.GetHMIState(aircraft.Callsign);
 
@@ -135,7 +123,7 @@ namespace DTIWindow.UI
                             e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
                         }
 
-                        if (designatedAircraft != null && designatedAircraft.Callsign == aircraft.Callsign)
+                        if (aircraft.designatedAircraft != null && aircraft.designatedAircraft.Callsign == aircraft.Callsign)
                         {
                             using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox)))
                             {
@@ -165,15 +153,12 @@ namespace DTIWindow.UI
 
                         // Set event handlers for mouse actions on child labels
                         var mouseEvents = new MouseEvents();
-                        Debug.WriteLine("MouseEvents instance created");
                         childLabel.MouseDown += (sender, e) =>
                         {
-                            Debug.WriteLine($"MouseDown event attached for child: {child.Callsign}");
                             mouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
                         };
                         childLabel.MouseUp += (sender, e) =>
                         {
-                            Debug.WriteLine($"MouseUp event attached for child: {child.Callsign}");
                             mouseEvents.ChildLabel_MouseUp(sender, e, aircraft, child);
                         };
 
@@ -184,10 +169,40 @@ namespace DTIWindow.UI
                     yOffset += 10;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Error in PopulateAircraftDisplay: {ex.Message}");
             }
+        }
+
+        public void CheckAndSetDesignatedAircraft()
+        {
+            // Retrieve the designated aircraft callsign from vatSys
+            var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
+
+            if (string.IsNullOrEmpty(designatedAircraftCallsign))
+            {
+                return; // Exit if no valid designated aircraft is found
+            }
+
+            // Find the aircraft corresponding to the designated callsign
+            var designatedAircraft = AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == designatedAircraftCallsign);
+
+            if (designatedAircraft == null)
+            {
+                return; // Exit if no matching aircraft is found
+            }
+
+            // Clear the designation for all other aircraft
+            foreach (var aircraft in AircraftManager.AircraftList)
+            {
+                aircraft.designatedAircraft = null;
+            }
+
+            // Set the new designated aircraft
+            designatedAircraft.SetDesignatedAircraft();
+
+            // Refresh the UI to reflect the new designation
+            PopulateAircraftDisplay();
         }
     }
 }

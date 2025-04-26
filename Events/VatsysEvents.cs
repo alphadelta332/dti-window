@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using DTIWindow.Models;
 using DTIWindow.UI;
+using DTIWindow.Integration;
 using vatsys;
 
 namespace DTIWindow.Events
@@ -42,47 +43,29 @@ namespace DTIWindow.Events
                     return;
                 }
 
-                // Check if the selected track corresponds to a parent aircraft
-                if (track != null)
+                // Clear the designation for all aircraft
+                foreach (var aircraft in AircraftManager.AircraftList)
                 {
-                    var parentAircraft = track != null 
-                        ? AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign) 
-                        : null;
-                    if (parentAircraft != null)
-                    {
-                        // Update the designated aircraft in the AircraftViewer
-                        if (Window != null && !Window.IsDisposed)
-                        {
-                            parentAircraft?.SetDesignatedAircraft(parentAircraft);
-                        }
-                    }
-                    else
-                    {
-                        // Clear the designated aircraft if no match is found
-                        if (Window != null && !Window.IsDisposed)
-                        {
-                            parentAircraft?.SetDesignatedAircraft(null);
-                        }
-                    }
+                    aircraft.designatedAircraft = null;
                 }
-                else
+
+                // Trigger the SetDesignatedAircraft method
+                foreach (var aircraft in AircraftManager.AircraftList)
                 {
-                    // Clear the designated aircraft if no track is selected
-                    var parentAircraft = track?.GetPilot() != null 
-                        ? AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == track.GetPilot().Callsign) 
-                        : null;
-                    if (Window != null && !Window.IsDisposed)
-                    {
-                        parentAircraft?.SetDesignatedAircraft(null);
-                    }
+                    aircraft.SetDesignatedAircraft();
                 }
 
                 // Update the previously selected track
                 PreviousSelectedTrack = track;
+
+                // Refresh the UI
+                var windowInstance = Application.OpenForms
+                    .OfType<Window>()
+                    .FirstOrDefault();
+                windowInstance?.PopulateAircraftDisplay();
             }
             catch (Exception)
             {
-                // Handle exceptions silently in release mode
             }
         }
 
@@ -101,9 +84,8 @@ namespace DTIWindow.Events
 
                 Window.Show(ActiveForm);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Error opening form: {ex.Message}");
             }
         }
         public void Initialize()
@@ -157,6 +139,7 @@ namespace DTIWindow.Events
         }
         public void OnTracksChanged(object sender, object e)
         {
+            Debug.WriteLine("OnTracksChanged event triggered.");
             try
             {
                 // Dynamically check if the event args are of type TracksChangedEventArgs
@@ -170,16 +153,47 @@ namespace DTIWindow.Events
                     // Access the 'Removed' property
                     var removedProperty = tracksChangedEventArgsType.GetProperty("Removed", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
                     bool removed = removedProperty != null && (bool)removedProperty.GetValue(e);
+
+                    // If the track is removed, skip further processing
+                    if (removed)
+                    {
+                        return;
+                    }
                 }
 
+                // Retrieve the designated aircraft callsign
+                var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
+
+                if (string.IsNullOrEmpty(designatedAircraftCallsign))
+                {
+                    return;
+                }
+
+                // Clear the designation for all aircraft
+                foreach (var aircraft in AircraftManager.AircraftList)
+                {
+                    aircraft.designatedAircraft = null;
+                }
+
+                // Find the aircraft corresponding to the designated callsign
+                var designatedAircraft = AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == designatedAircraftCallsign);
+
+                if (designatedAircraft == null)
+                {
+                    return;
+                }
+
+                // Set the new designated aircraft
+                designatedAircraft.SetDesignatedAircraft();
+
                 // Refresh the aircraft display
-                var aircraftList = AircraftManager.AircraftList;
-                var windowInstance = new Window(aircraftList, new Dictionary<Aircraft, List<Aircraft>>());
-                windowInstance.PopulateAircraftDisplay();
+                var windowInstance = Application.OpenForms
+                    .OfType<Window>()
+                    .FirstOrDefault();
+                windowInstance?.PopulateAircraftDisplay();
             }
             catch (Exception)
             {
-                // Handle exceptions silently in release mode
             }
         }
     }

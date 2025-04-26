@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using DTIWindow.Models;
 using DTIWindow.UI;
 using vatsys;
@@ -31,9 +30,7 @@ namespace DTIWindow.Events
 
         // Handles mouse up on child aircraft labels
         public void ChildLabel_MouseUp(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
-        {
-            Debug.WriteLine($"ChildLabel_MouseUp called for child: {child.Callsign}, button: {e.Button}");
-            
+        {            
             if (sender is Label childLabel)
             {
                 // Release mouse input
@@ -41,9 +38,6 @@ namespace DTIWindow.Events
 
                 // Reset the background color when the mouse button is released
                 childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
-
-                // Perform the action based on the mouse button released
-                Debug.WriteLine($"ChildLabel_MouseUp called for child: {child.Callsign}, button: {e.Button}");
 
                 // Release mouse input
                 childLabel.Capture = false;
@@ -60,22 +54,18 @@ namespace DTIWindow.Events
                     }
                     else if (e.Button == MouseButtons.Right)
                     {
-                        Debug.WriteLine($"Right-click detected for child: {child.Callsign}");
                         child.Status = "Unpassed";
                     }
                     else if (e.Button == MouseButtons.Middle)
                     {
-                        Debug.WriteLine($"Middle-click detected for child: {child.Callsign}");
 
                         // Remove the child from the parent's children list
                         parent.Children.Remove(child);
-                        Debug.WriteLine($"Removed child: {child.Callsign} from parent: {parent.Callsign}");
 
                         // If the parent has no more children, remove the parent from the aircraft list
                         if (parent.Children.Count == 0)
                         {
                             AircraftManager.AircraftList.Remove(parent);
-                            Debug.WriteLine($"Removed parent: {parent.Callsign} from AircraftManager.AircraftList");
                         }
                     }
 
@@ -83,17 +73,11 @@ namespace DTIWindow.Events
                     var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
                     if (windowInstance != null)
                     {
-                        Debug.WriteLine("Refreshing the UI");
                         windowInstance.PopulateAircraftDisplay();
                     }
-                    else
-                    {
-                        Debug.WriteLine("Window instance not found");
-                    }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Debug.WriteLine($"Error in ChildLabel_MouseUp: {ex.Message}");
                 }
                 finally
                 {
@@ -104,8 +88,6 @@ namespace DTIWindow.Events
         
         protected override void OnPreviewClientMouseUp(BaseMouseEventArgs e)
         {
-            Debug.WriteLine($"OnPreviewClientMouseUp called with button: {e.Button}");
-
             if (e.Button == MouseButtons.Middle)
             {
                 // Prevent the default behavior in BaseForm
@@ -120,16 +102,7 @@ namespace DTIWindow.Events
                     {
                         Point mousePosition = WindowInstance.aircraftPanel.PointToClient(Cursor.Position);
                     }
-                    else
-                    {
-                        Debug.WriteLine("Window instance not found");
-                    }
                 }
-                else
-                {
-                    Debug.WriteLine("Window instance not found");
-                }
-                Debug.WriteLine($"Mouse position: {MousePosition}");
 
                 // Iterate through the child controls of the aircraftPanel
                 if (windowInstance?.aircraftPanel != null)
@@ -138,7 +111,6 @@ namespace DTIWindow.Events
                     {
                         if (control is Label childLabel && control.Bounds.Contains(MousePosition))
                         {
-                            Debug.WriteLine($"Middle-click detected on label with text: {childLabel.Text}");
 
                             // Find the parent and child objects associated with the label
                             foreach (var parent in AircraftManager.AircraftList)
@@ -146,7 +118,6 @@ namespace DTIWindow.Events
                                 var child = parent.Children.FirstOrDefault(c => c.Callsign == childLabel.Text);
                                 if (child != null)
                                 {
-                                    Debug.WriteLine($"Found parent '{parent.Callsign}' and child '{child.Callsign}'");
                                     HandleMiddleClick(parent, child);
                                     break;
                                 }
@@ -157,8 +128,6 @@ namespace DTIWindow.Events
                         }
                     }
                 }
-
-                Debug.WriteLine("Middle-click did not hit any child label");
                 return; // Prevent the default behavior if no label is found
             }
 
@@ -169,40 +138,29 @@ namespace DTIWindow.Events
         {
             try
             {
-                Debug.WriteLine($"HandleMiddleClick called for parent: {parent.Callsign}, child: {child.Callsign}");
-
                 // Remove the child from the parent's children list
                 parent.Children.Remove(child);
-                Debug.WriteLine($"Removed child: {child.Callsign} from parent: {parent.Callsign}");
 
                 // If the parent has no more children, remove the parent from the aircraft list
                 if (parent.Children.Count == 0)
                 {
                     AircraftManager.AircraftList.Remove(parent);
-                    Debug.WriteLine($"Removed parent: {parent.Callsign} from AircraftManager.AircraftList");
                 }
 
                 // Refresh the UI to reflect the change
                 var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
                 if (windowInstance != null)
                 {
-                    Debug.WriteLine("Refreshing the UI");
                     windowInstance.PopulateAircraftDisplay();
                 }
-                else
-                {
-                    Debug.WriteLine("Window instance not found");
-                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Error in HandleMiddleClick: {ex.Message}");
             }
         }
 
         protected override void WndProc(ref Message m)
         {
-            Debug.WriteLine($"WndProc called with message: {m.Msg}");
             try
             {
                 const int WM_PARENTNOTIFY = 0x0210; // Parent notify message
@@ -216,7 +174,6 @@ namespace DTIWindow.Events
 
                     if (lowWord == WM_MBUTTONDOWN)
                     {
-                        Debug.WriteLine("Middle mouse button down detected");
 
                         // Capture mouse input
                         this.Capture = true;
@@ -227,10 +184,6 @@ namespace DTIWindow.Events
                         {
                             Point mousePosition = windowInstance.aircraftPanel.PointToClient(Cursor.Position);
                         }
-                        else
-                        {
-                            Debug.WriteLine("Window instance not found");
-                        }
 
                         // Check if the mouse is over a child label
                         if (windowInstance?.aircraftPanel != null)
@@ -239,7 +192,6 @@ namespace DTIWindow.Events
                             {
                                 if (control is Label childLabel && childLabel.Bounds.Contains(MousePosition))
                                 {
-                                    Debug.WriteLine($"Middle-click detected on label with text: {childLabel.Text}");
 
                                     // Highlight the label background
                                     childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick);
@@ -249,7 +201,6 @@ namespace DTIWindow.Events
 
                                     // Track the active child label
                                     ChildAircraft.activeChildLabel = childLabel;
-                                    Debug.WriteLine($"Active child label set to: {childLabel.Text}");
 
                                     return; // Prevent further processing
                                 }
@@ -258,23 +209,18 @@ namespace DTIWindow.Events
 
                         // If no label is found, clear the active child label
                         ChildAircraft.activeChildLabel = null;
-                        Debug.WriteLine("No active child label found");
                     }
                 }
 
                 // Check for WM_MBUTTONUP
                 if (m.Msg == WM_MBUTTONUP)
                 {
-                    Debug.WriteLine("Middle mouse button up detected");
-
                     // Release mouse input
                     this.Capture = false;
 
                     // Use the active child label if it exists
                     if (ChildAircraft.activeChildLabel != null)
                     {
-                        Debug.WriteLine($"Active child label: {ChildAircraft.activeChildLabel.Text}");
-
                         // Reset the label background
                         ChildAircraft.activeChildLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
 
@@ -311,16 +257,12 @@ namespace DTIWindow.Events
                 // Call the base method for other messages
                 base.WndProc(ref m);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log the exception to the debug console
-                Debug.WriteLine($"Unhandled exception in WndProc: {ex.Message}");
-                Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
             }
         }
         protected override void OnClosing(CancelEventArgs e)
         {
-            Debug.WriteLine("MouseEvents form is closing");
             base.OnClosing(e);
         }
     }
