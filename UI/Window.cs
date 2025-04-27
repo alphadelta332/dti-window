@@ -6,6 +6,7 @@ using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 using System.Reflection;
 using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace DTIWindow.UI
 {
@@ -41,10 +42,10 @@ namespace DTIWindow.UI
             this.Text = "Traffic Info";
             this.Width = 200;
             this.Height = 350;
-            this.BackColor = UIColours.GetColour(UIColours.Identities.WindowBackground); // Updated
+            this.BackColor = UIColours.GetColour(UIColours.Identities.WindowBackground);
 
             // Create the main panel for displaying aircraft
-            aircraftPanel = new Panel
+            aircraftPanel = new DoubleBufferedPanel
             {
                 Dock = DockStyle.Fill,
                 AutoScroll = true
@@ -62,6 +63,16 @@ namespace DTIWindow.UI
 
             // Check and set the designated aircraft after populating the display
             CheckAndSetDesignatedAircraft();
+        }
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED to enable double buffering
+                return cp;
+            }
         }
 
         // Event handler to refresh the UI when the aircraft list changes
@@ -211,6 +222,19 @@ namespace DTIWindow.UI
 
             // Refresh the UI to reflect the new designation
             PopulateAircraftDisplay();
+        }
+    }
+
+    public class DoubleBufferedPanel : Panel
+    {
+        public DoubleBufferedPanel()
+        {
+            // Enable double buffering
+            this.DoubleBuffered = true;
+
+            // Reduce flickering by optimizing redraw behavior
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            this.UpdateStyles();
         }
     }
 }
