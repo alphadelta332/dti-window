@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using DTIWindow.Integration;
 
 namespace DTIWindow.Models
@@ -33,8 +34,16 @@ namespace DTIWindow.Models
         {
             return Children.Count > 0;
         }
-        public void SetDesignatedAircraft()
+        public void SetDesignatedAircraft(bool triggeredByDesignateWithWindow = false)
         {
+            // If triggered by DesignateWithWindow, set this aircraft as the designated aircraft
+            if (triggeredByDesignateWithWindow)
+            {
+                this.designatedAircraft = this;
+                Debug.WriteLine($"Designated aircraft set to {this.Callsign} via DesignateWithWindow.");
+                return;
+            }
+
             // Retrieve the designated aircraft from the Tracks class
             var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
 
@@ -51,6 +60,7 @@ namespace DTIWindow.Models
 
             // Set this aircraft as the designated aircraft
             this.designatedAircraft = this;
+            Debug.WriteLine($"Designated aircraft set to {this.Callsign} via Tracks.");
         }
     }
 }

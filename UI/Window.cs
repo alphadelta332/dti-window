@@ -104,7 +104,8 @@ namespace DTIWindow.UI
                 aircraftPanel.Controls.Clear(); // Clear all previous UI elements
                 int yOffset = 10; // Y-positioning for UI elements
 
-                // Display traffic pairings for each aircraft
+                var mouseEvents = new MouseEvents(); // Create an instance of MouseEvents
+
                 foreach (var aircraft in aircraftList)
                 {
                     // Retrieve the HMI state for the aircraft's callsign
@@ -150,6 +151,12 @@ namespace DTIWindow.UI
                         }
                     };
 
+                    // Add a MouseClick event handler to the boxPanel
+                    boxPanel.MouseClick += (sender, e) =>
+                    {
+                        mouseEvents.DesignateWithWindow(sender, e, aircraft);
+                    };
+
                     aircraftPanel.Controls.Add(boxPanel);
 
                     yOffset += 25;
@@ -170,7 +177,6 @@ namespace DTIWindow.UI
                         };
 
                         // Set event handlers for mouse actions on child labels
-                        var mouseEvents = new MouseEvents();
                         childLabel.MouseDown += (sender, e) =>
                         {
                             mouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
@@ -218,7 +224,7 @@ namespace DTIWindow.UI
             }
 
             // Set the new designated aircraft
-            designatedAircraft.SetDesignatedAircraft();
+            designatedAircraft.SetDesignatedAircraft(triggeredByDesignateWithWindow: false);
 
             // Refresh the UI to reflect the new designation
             PopulateAircraftDisplay();

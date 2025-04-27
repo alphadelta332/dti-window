@@ -52,7 +52,7 @@ namespace DTIWindow.Events
                 // Trigger the SetDesignatedAircraft method
                 foreach (var aircraft in AircraftManager.AircraftList)
                 {
-                    aircraft.SetDesignatedAircraft();
+                    aircraft.SetDesignatedAircraft(triggeredByDesignateWithWindow: false);
                 }
 
                 // Update the previously selected track
@@ -185,7 +185,7 @@ namespace DTIWindow.Events
             }
 
             // Set the new designated aircraft
-            designatedAircraft.SetDesignatedAircraft();
+            designatedAircraft.SetDesignatedAircraft(triggeredByDesignateWithWindow: false);
 
             // Refresh the aircraft display
             var windowInstance = Application.OpenForms

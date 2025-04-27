@@ -1,9 +1,11 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using DTIWindow.Models;
 using DTIWindow.UI;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
+using System.Collections;
 
 namespace DTIWindow.Events
 {
@@ -259,13 +261,85 @@ namespace DTIWindow.Events
                 base.WndProc(ref m);
             }
             catch (Exception ex)
-{
-    Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
-}
+            {
+                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
+            }
         }
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
+        }
+
+        public void DesignateWithWindow(object? sender, MouseEventArgs e, Aircraft aircraft)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                try
+                {
+                    // Access the SelectedTrack property
+                    var selectedTrackProperty = typeof(MMI).GetProperty("SelectedTrack", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+                    var currentSelectedTrack = selectedTrackProperty?.GetValue(null) as Track;
+
+                    // Check if the clicked aircraft is already the designated one
+                    if (currentSelectedTrack?.GetPilot()?.Callsign == aircraft.Callsign)
+                    {
+                        // Deselect the current track by setting SelectedTrack to null
+                        selectedTrackProperty?.SetValue(null, null);
+
+                        // Trigger the SelectedTrackChanged event to notify vatSys
+                        var eventField = typeof(MMI).GetField("SelectedTrackChanged", BindingFlags.Static | BindingFlags.NonPublic);
+                        if (eventField?.GetValue(null) is EventHandler eventDelegate)
+                        {
+                            eventDelegate.Invoke(null, EventArgs.Empty);
+                        }
+                        else
+                        {
+                        }
+
+                        return; // Exit early since the track was deselected
+                    }
+
+                    // Set the designated aircraft for the parent
+                    var setDesignatedAircraftMethod = typeof(Aircraft).GetMethod("SetDesignatedAircraft", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    setDesignatedAircraftMethod?.Invoke(aircraft, new object[] { true });
+
+                    // Access the AircraftTracks field
+                    var aircraftTracksField = typeof(MMI).GetField("AircraftTracks", BindingFlags.Static | BindingFlags.NonPublic);
+                    var aircraftTracks = aircraftTracksField?.GetValue(null) as IDictionary;
+
+                    // Retrieve the track directly from AircraftTracks
+                    var track = aircraftTracks?.Values.Cast<Track>().FirstOrDefault(t => t.GetPilot()?.Callsign == aircraft.Callsign);
+
+                    if (track != null)
+                    {
+                        // Set the SelectedTrack property
+                        if (selectedTrackProperty != null)
+                        {
+                            selectedTrackProperty.SetValue(null, track);
+                        }
+                        else
+                        {
+                        }
+
+                        // Trigger the SelectedTrackChanged event to notify the system
+                        var eventField = typeof(MMI).GetField("SelectedTrackChanged", BindingFlags.Static | BindingFlags.NonPublic);
+                        if (eventField?.GetValue(null) is EventHandler eventDelegate)
+                        {
+                            eventDelegate.Invoke(null, EventArgs.Empty);
+                        }
+                        else
+                        {
+                        }
+                    }
+                    else
+                    {
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Exception in DesignateWithWindow: {ex.Message}\n{ex.StackTrace}");
+                }
+            }
         }
     }
 }
