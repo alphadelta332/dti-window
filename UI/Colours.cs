@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace DTIWindow.UI
 {
     public static class Colours
@@ -17,9 +19,9 @@ namespace DTIWindow.UI
         {
             return identity switch
             {
-                Identities.WindowBackground => vatsys.Colours.GetColour(vatsys.Colours.Identities.WindowBackground),
+                Identities.WindowBackground => GetAdjustedColour(vatsys.Colours.Identities.WindowBackground),
                 Identities.ChildLabelBackground => Color.Transparent,
-                Identities.ChildLabelBackgroundClick => vatsys.Colours.GetColour(vatsys.Colours.Identities.GenericText),
+                Identities.ChildLabelBackgroundClick => GetAdjustedColour(vatsys.Colours.Identities.GenericText),
                 Identities.ChildLabelTextClick => Color.White,
                 Identities.DesignationBox => Color.White,
                 Identities.ChildLabelPassedText => Color.FromArgb(0, 0, 188),
@@ -51,7 +53,7 @@ namespace DTIWindow.UI
                 };
 
                 // Get the color from vatsys.Colours
-                Color color = vatsys.Colours.GetColour(identity);
+                Color color = GetAdjustedColour(identity);
 
                 return (hmiState, color);
             }
@@ -59,6 +61,23 @@ namespace DTIWindow.UI
             {
                 return ("Error", Color.Red); // Default error case
             }
+        }
+
+            private static Color GetAdjustedColour(vatsys.Colours.Identities identity)
+            {
+                // Use reflection to access the adjustedColours dictionary
+                var adjustedColoursField = typeof(vatsys.Colours).GetField("adjustedColours", BindingFlags.NonPublic | BindingFlags.Static);
+                if (adjustedColoursField != null)
+                {
+                    var adjustedColours = adjustedColoursField.GetValue(null) as Dictionary<vatsys.Colours.Identities, Color>;
+                    if (adjustedColours != null && adjustedColours.ContainsKey(identity))
+                    {
+                        return adjustedColours[identity];
+                    }
+                }
+
+                // Fallback to unadjusted color if adjustedColours is not accessible
+                return vatsys.Colours.GetColour(identity);
         }
     }
 }
