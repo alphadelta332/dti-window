@@ -92,11 +92,7 @@ namespace DTIWindow.Events
                 var windowInstance = Application.OpenForms.OfType<Window>().FirstOrDefault();
                 if (windowInstance != null)
                 {
-                    var WindowInstance = Application.OpenForms.OfType<Window>().FirstOrDefault();
-                    if (WindowInstance != null)
-                    {
-                        Point mousePosition = WindowInstance.aircraftPanel.PointToClient(Cursor.Position);
-                    }
+                    Point mousePosition = windowInstance.aircraftPanel.PointToClient(Cursor.Position);
                 }
 
                 // Iterate through the child controls of the aircraftPanel

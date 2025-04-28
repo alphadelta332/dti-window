@@ -8,7 +8,7 @@ namespace DTIWindow.Models
         public string Name { get; set; } // Name of the aircraft
         public string Callsign { get; set; } // Callsign of the aircraft
         public BindingList<ChildAircraft> Children { get; set; } = new BindingList<ChildAircraft>(); // List of child aircraft associated with this aircraft
-        public Aircraft? designatedAircraft = null; // Currently designated aircraft
+        public Aircraft? designatedAircraft { get; set; } = null; // Currently designated aircraft
 
         public Aircraft(string name, string callsign)
         {
