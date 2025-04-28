@@ -3,7 +3,6 @@ using DTIWindow.Models;
 using DTIWindow.UI;
 using DTIWindow.Integration;
 using vatsys;
-using System.Diagnostics;
 
 namespace DTIWindow.Events
 {
@@ -77,8 +76,6 @@ namespace DTIWindow.Events
                 // Check if the Window instance is null or disposed
                 if (Window == null || Window.IsDisposed)
                 {
-                    Debug.WriteLine("Recreating the Window form because it was disposed or null.");
-
                     // Use the shared AircraftList from AircraftManager
                     var aircraftList = AircraftManager.AircraftList;
                     var trafficPairings = Pairings.GetTrafficPairings();
@@ -98,9 +95,8 @@ namespace DTIWindow.Events
                     Window.BringToFront(); // Bring the form to the front if it is already visible
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception in OpenForm: {ex.Message}\n{ex.StackTrace}");
             }
         }
         public void Initialize()
