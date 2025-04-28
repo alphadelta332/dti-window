@@ -1,7 +1,7 @@
 using System.Reflection;
+using DTIWindow.Integration;
 using DTIWindow.Models;
 using DTIWindow.UI;
-using DTIWindow.Integration;
 using vatsys;
 
 namespace DTIWindow.Events
@@ -107,7 +107,7 @@ namespace DTIWindow.Events
                 EventInfo tracksChangedEvent = typeof(MMI).GetEvent("TracksChanged", BindingFlags.Static | BindingFlags.NonPublic);
                 if (tracksChangedEvent == null)
                 {
-                return;
+                    return;
                 }
 
                 // Get the backing field for the TracksChanged event
@@ -151,55 +151,55 @@ namespace DTIWindow.Events
         {
             try
             {
-            // Dynamically check if the event args are of type TracksChangedEventArgs
-            var tracksChangedEventArgsType = typeof(MMI).Assembly.GetType("vatsys.TracksChangedEventArgs");
-            if (tracksChangedEventArgsType != null && tracksChangedEventArgsType.IsInstanceOfType(e))
-            {
-                // Access the 'Track' property
-                var trackProperty = tracksChangedEventArgsType.GetProperty("Track", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                var track = trackProperty?.GetValue(e);
-
-                // Access the 'Removed' property
-                var removedProperty = tracksChangedEventArgsType.GetProperty("Removed", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                bool removed = removedProperty != null && (bool)removedProperty.GetValue(e);
-
-                // If the track is removed, skip further processing
-                if (removed)
+                // Dynamically check if the event args are of type TracksChangedEventArgs
+                var tracksChangedEventArgsType = typeof(MMI).Assembly.GetType("vatsys.TracksChangedEventArgs");
+                if (tracksChangedEventArgsType != null && tracksChangedEventArgsType.IsInstanceOfType(e))
                 {
-                return;
+                    // Access the 'Track' property
+                    var trackProperty = tracksChangedEventArgsType.GetProperty("Track", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    var track = trackProperty?.GetValue(e);
+
+                    // Access the 'Removed' property
+                    var removedProperty = tracksChangedEventArgsType.GetProperty("Removed", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    bool removed = removedProperty != null && (bool)removedProperty.GetValue(e);
+
+                    // If the track is removed, skip further processing
+                    if (removed)
+                    {
+                        return;
+                    }
                 }
-            }
 
-            // Retrieve the designated aircraft callsign
-            var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
+                // Retrieve the designated aircraft callsign
+                var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
 
-            if (string.IsNullOrEmpty(designatedAircraftCallsign))
-            {
-                return;
-            }
+                if (string.IsNullOrEmpty(designatedAircraftCallsign))
+                {
+                    return;
+                }
 
-            // Clear the designation for all aircraft
-            foreach (var aircraft in AircraftManager.AircraftList)
-            {
-                aircraft.designatedAircraft = null;
-            }
+                // Clear the designation for all aircraft
+                foreach (var aircraft in AircraftManager.AircraftList)
+                {
+                    aircraft.designatedAircraft = null;
+                }
 
-            // Find the aircraft corresponding to the designated callsign
-            var designatedAircraft = AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == designatedAircraftCallsign);
+                // Find the aircraft corresponding to the designated callsign
+                var designatedAircraft = AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == designatedAircraftCallsign);
 
-            if (designatedAircraft == null)
-            {
-                return;
-            }
+                if (designatedAircraft == null)
+                {
+                    return;
+                }
 
-            // Set the new designated aircraft
-            designatedAircraft.SetDesignatedAircraft(triggeredByDesignateWithWindow: false);
+                // Set the new designated aircraft
+                designatedAircraft.SetDesignatedAircraft(triggeredByDesignateWithWindow: false);
 
-            // Refresh the aircraft display
-            var windowInstance = Application.OpenForms
-                .OfType<Window>()
-                .FirstOrDefault();
-            windowInstance?.PopulateAircraftDisplay();
+                // Refresh the aircraft display
+                var windowInstance = Application.OpenForms
+                    .OfType<Window>()
+                    .FirstOrDefault();
+                windowInstance?.PopulateAircraftDisplay();
             }
             catch (Exception)
             {

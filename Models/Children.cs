@@ -1,6 +1,6 @@
 namespace DTIWindow.Models
 {
-// Represents a child aircraft in the system
+    // Represents a child aircraft in the system
     public class ChildAircraft
     {
         public string Name { get; set; } // Name of the child aircraft

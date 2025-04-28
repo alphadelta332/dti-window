@@ -1,10 +1,10 @@
 using System.ComponentModel;
-using DTIWindow.Models;
+using System.Reflection;
 using DTIWindow.Events;
 using DTIWindow.Integration;
+using DTIWindow.Models;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
-using System.Reflection;
 
 namespace DTIWindow.UI
 {

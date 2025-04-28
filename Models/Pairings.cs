@@ -4,7 +4,7 @@ namespace DTIWindow.Models
 {
     // Manages traffic pairings between parent and child aircraft
     public class Pairings : BaseForm
-    {        
+    {
         private static Dictionary<Aircraft, List<Aircraft>> trafficPairings = new Dictionary<Aircraft, List<Aircraft>>(); // Stores traffic pairings between aircraft
 
         // Creates a traffic pairing between two aircraft

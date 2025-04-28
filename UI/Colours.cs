@@ -63,21 +63,21 @@ namespace DTIWindow.UI
             }
         }
 
-            private static Color GetAdjustedColour(vatsys.Colours.Identities identity)
+        private static Color GetAdjustedColour(vatsys.Colours.Identities identity)
+        {
+            // Use reflection to access the adjustedColours dictionary
+            var adjustedColoursField = typeof(vatsys.Colours).GetField("adjustedColours", BindingFlags.NonPublic | BindingFlags.Static);
+            if (adjustedColoursField != null)
             {
-                // Use reflection to access the adjustedColours dictionary
-                var adjustedColoursField = typeof(vatsys.Colours).GetField("adjustedColours", BindingFlags.NonPublic | BindingFlags.Static);
-                if (adjustedColoursField != null)
+                var adjustedColours = adjustedColoursField.GetValue(null) as Dictionary<vatsys.Colours.Identities, Color>;
+                if (adjustedColours != null && adjustedColours.ContainsKey(identity))
                 {
-                    var adjustedColours = adjustedColoursField.GetValue(null) as Dictionary<vatsys.Colours.Identities, Color>;
-                    if (adjustedColours != null && adjustedColours.ContainsKey(identity))
-                    {
-                        return adjustedColours[identity];
-                    }
+                    return adjustedColours[identity];
                 }
+            }
 
-                // Fallback to unadjusted color if adjustedColours is not accessible
-                return vatsys.Colours.GetColour(identity);
+            // Fallback to unadjusted color if adjustedColours is not accessible
+            return vatsys.Colours.GetColour(identity);
         }
     }
 }

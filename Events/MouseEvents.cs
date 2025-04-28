@@ -1,10 +1,10 @@
+using System.Collections;
 using System.ComponentModel;
 using System.Reflection;
 using DTIWindow.Models;
 using DTIWindow.UI;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
-using System.Collections;
 
 namespace DTIWindow.Events
 {
@@ -31,7 +31,7 @@ namespace DTIWindow.Events
 
         // Handles mouse up on child aircraft labels
         public void ChildLabel_MouseUp(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
-        {            
+        {
             if (sender is Label childLabel)
             {
                 // Release mouse input
@@ -86,14 +86,14 @@ namespace DTIWindow.Events
                 }
             }
         }
-        
+
         protected override void OnPreviewClientMouseUp(BaseMouseEventArgs e)
         {
             if (e.Button == MouseButtons.Middle)
             {
                 // Prevent the default behavior in BaseForm
                 e.Handled = true;
-                
+
                 // Get the mouse position relative to the aircraftPanel
                 var windowInstance = Application.OpenForms.OfType<Window>().FirstOrDefault();
                 if (windowInstance != null)

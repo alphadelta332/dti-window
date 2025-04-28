@@ -1,9 +1,9 @@
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using DTIWindow.Events;
 using vatsys;
 using vatsys.Plugin;
-using DTIWindow.Events;
-using System.Diagnostics;
 
 namespace DTIWindow.Integration
 {
