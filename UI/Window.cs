@@ -5,6 +5,7 @@ using DTIWindow.Integration;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace DTIWindow.UI
 {
@@ -73,18 +74,29 @@ namespace DTIWindow.UI
         }
 
         // Event handler to refresh the UI when the aircraft list changes
-        private void AircraftList_ListChanged(object? sender, ListChangedEventArgs e)
+        public void AircraftList_ListChanged(object? sender, ListChangedEventArgs e)
         {
             if (InvokeRequired)
             {
                 // If called from a different thread, invoke the UI update on the main thread
-                Invoke(new MethodInvoker(PopulateAircraftDisplay));
+                Invoke(new MethodInvoker(() => AircraftList_ListChanged(sender, e)));
+                return;
             }
-            else
+
+            // Close the window if there are no aircraft remaining
+            if (aircraftList.Count == 0)
             {
-                // Update the UI directly
-                PopulateAircraftDisplay();
+                Debug.WriteLine("Closing the Window form because there are no aircraft remaining.");
+
+                // Unsubscribe from the ListChanged event
+                aircraftList.ListChanged -= AircraftList_ListChanged;
+
+                Close();
+                return;
             }
+
+            // Update the UI directly
+            PopulateAircraftDisplay();
         }
 
         // Populates the aircraft display with UI elements
@@ -98,13 +110,6 @@ namespace DTIWindow.UI
 
             try
             {
-                // Close the form if there are no aircraft remaining
-                if (aircraftList.Count == 0)
-                {
-                    Close();
-                    return;
-                }
-
                 aircraftPanel.Controls.Clear(); // Clear all previous UI elements
                 int yOffset = 10; // Y-positioning for UI elements
 
