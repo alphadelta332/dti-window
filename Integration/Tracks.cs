@@ -11,12 +11,6 @@ namespace DTIWindow.Integration
         {
             return MMI.SelectedTrack;
         }
-
-        /// Returns the callsign of the designated aircraft, or null if none is selected.
-        public static string? GetDesignatedCallsign()
-        {
-            return MMI.SelectedTrack.GetPilot().Callsign;
-        }
     }
     public static class States
     {

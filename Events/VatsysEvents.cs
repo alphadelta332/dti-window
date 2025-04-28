@@ -3,7 +3,6 @@ using DTIWindow.Models;
 using DTIWindow.UI;
 using DTIWindow.Integration;
 using vatsys;
-using System.Diagnostics;
 
 namespace DTIWindow.Events
 {
@@ -64,9 +63,8 @@ namespace DTIWindow.Events
                     .FirstOrDefault();
                 windowInstance?.PopulateAircraftDisplay();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -85,9 +83,8 @@ namespace DTIWindow.Events
 
                 Window.Show(ActiveForm);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
         public void Initialize()
@@ -112,7 +109,7 @@ namespace DTIWindow.Events
                 Delegate? currentDelegate = eventField.GetValue(null) as Delegate;
 
                 // Create a delegate for the OnTracksChanged method
-                MethodInfo onTracksChangedMethod = typeof(VatsysEvents).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                var onTracksChangedMethod = typeof(VatsysEvents).GetMethod(nameof(OnTracksChanged));
                 if (onTracksChangedMethod == null)
                 {
                     return;
@@ -134,9 +131,8 @@ namespace DTIWindow.Events
                 // Set the combined delegate back to the event field
                 eventField.SetValue(null, combinedDelegate);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Error initializing TracksChanged subscription: {ex.Message}\n{ex.StackTrace}");
             }
         }
         private void OnTracksChanged(object sender, EventArgs e)
@@ -193,9 +189,8 @@ namespace DTIWindow.Events
                 .FirstOrDefault();
             windowInstance?.PopulateAircraftDisplay();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
     }

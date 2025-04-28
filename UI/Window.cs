@@ -5,8 +5,6 @@ using DTIWindow.Integration;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 using System.Reflection;
-using System.Diagnostics;
-using System.Windows.Forms;
 
 namespace DTIWindow.UI
 {
@@ -30,19 +28,18 @@ namespace DTIWindow.UI
                     field.SetValue(this, false);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
 
             // Register an event to refresh the UI when the aircraft list changes
-            this.aircraftList.ListChanged += AircraftList_ListChanged;
+            aircraftList.ListChanged += AircraftList_ListChanged;
 
             // Set form properties
-            this.Text = "Traffic Info";
-            this.Width = 200;
-            this.Height = 350;
-            this.BackColor = UIColours.GetColour(UIColours.Identities.WindowBackground);
+            Text = "Traffic Info";
+            Width = 200;
+            Height = 350;
+            BackColor = UIColours.GetColour(UIColours.Identities.WindowBackground);
 
             // Create the main panel for displaying aircraft
             aircraftPanel = new DoubleBufferedPanel
@@ -55,7 +52,7 @@ namespace DTIWindow.UI
             PopulateAircraftDisplay();
 
             // Add the panel to the form
-            this.Controls.Add(aircraftPanel);
+            Controls.Add(aircraftPanel);
 
             // Initialize the TracksChanged event subscription
             var eventsInstance = new VatsysEvents();
@@ -101,6 +98,13 @@ namespace DTIWindow.UI
 
             try
             {
+                // Close the form if there are no aircraft remaining
+                if (aircraftList.Count == 0)
+                {
+                    Close();
+                    return;
+                }
+
                 aircraftPanel.Controls.Clear(); // Clear all previous UI elements
                 int yOffset = 10; // Y-positioning for UI elements
 
@@ -193,9 +197,8 @@ namespace DTIWindow.UI
                     yOffset += 10;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -236,11 +239,11 @@ namespace DTIWindow.UI
         public DoubleBufferedPanel()
         {
             // Enable double buffering
-            this.DoubleBuffered = true;
+            DoubleBuffered = true;
 
             // Reduce flickering by optimizing redraw behavior
-            this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
-            this.UpdateStyles();
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            UpdateStyles();
         }
     }
 }

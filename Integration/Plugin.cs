@@ -27,8 +27,6 @@ namespace DTIWindow.Integration
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
-        public new string Name => "DTI Window"; // Plugin name
-
         // Constructor for the DTIWindow plugin
         public DTIWindow()
         {

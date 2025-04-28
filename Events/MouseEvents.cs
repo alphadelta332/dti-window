@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Reflection;
 using DTIWindow.Models;
 using DTIWindow.UI;
@@ -156,9 +155,8 @@ namespace DTIWindow.Events
                     windowInstance.PopulateAircraftDisplay();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -219,7 +217,7 @@ namespace DTIWindow.Events
                 if (m.Msg == WM_MBUTTONUP)
                 {
                     // Release mouse input
-                    this.Capture = false;
+                    Capture = false;
 
                     // Use the active child label if it exists
                     if (ChildAircraft.activeChildLabel != null)
@@ -260,9 +258,8 @@ namespace DTIWindow.Events
                 // Call the base method for other messages
                 base.WndProc(ref m);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception: {ex.Message}\n{ex.StackTrace}");
             }
         }
         protected override void OnClosing(CancelEventArgs e)
@@ -335,9 +332,8 @@ namespace DTIWindow.Events
                     {
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Debug.WriteLine($"Exception in DesignateWithWindow: {ex.Message}\n{ex.StackTrace}");
                 }
             }
         }

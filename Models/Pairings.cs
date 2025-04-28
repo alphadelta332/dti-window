@@ -1,4 +1,3 @@
-using DTIWindow.UI;
 using vatsys;
 
 namespace DTIWindow.Models
@@ -6,7 +5,6 @@ namespace DTIWindow.Models
     // Manages traffic pairings between parent and child aircraft
     public class Pairings : BaseForm
     {        
-        private static readonly Dictionary<string, List<string>> trafficPairs = new Dictionary<string, List<string>>();
         private static Dictionary<Aircraft, List<Aircraft>> trafficPairings = new Dictionary<Aircraft, List<Aircraft>>(); // Stores traffic pairings between aircraft
 
         // Creates a traffic pairing between two aircraft
@@ -50,29 +48,6 @@ namespace DTIWindow.Models
             var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
             windowInstance?.PopulateAircraftDisplay();
             windowInstance?.CheckAndSetDesignatedAircraft();
-        }
-
-        // Retrieves the list of child callsigns for a given parent callsign
-        public static List<string> GetChildren(string parentCallsign)
-        {
-            if (trafficPairs.TryGetValue(parentCallsign, out var children))
-            {
-                return children;
-            }
-
-            return new List<string>(); // Return an empty list if the parent has no children
-        }
-
-        // Checks if a specific traffic pairing exists between a parent and a child
-        public static bool HasPair(string parentCallsign, string childCallsign)
-        {
-            return trafficPairs.ContainsKey(parentCallsign) && trafficPairs[parentCallsign].Contains(childCallsign);
-        }
-
-        // Retrieves all traffic pairings as a dictionary
-        public static Dictionary<string, List<string>> GetAllPairs()
-        {
-            return trafficPairs;
         }
 
         public static Dictionary<Aircraft, List<Aircraft>> GetTrafficPairings()
