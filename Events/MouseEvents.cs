@@ -40,12 +40,6 @@ namespace DTIWindow.Events
                 // Reset the background color when the mouse button is released
                 childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
 
-                // Release mouse input
-                childLabel.Capture = false;
-
-                // Reset the background color when the mouse button is released
-                childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
-
                 try
                 {
                     if (e.Button == MouseButtons.Left)
