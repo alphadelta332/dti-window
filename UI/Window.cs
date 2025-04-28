@@ -5,7 +5,6 @@ using DTIWindow.Integration;
 using vatsys;
 using UIColours = DTIWindow.UI.Colours;
 using System.Reflection;
-using System.Diagnostics;
 
 namespace DTIWindow.UI
 {
@@ -86,8 +85,6 @@ namespace DTIWindow.UI
             // Close the window if there are no aircraft remaining
             if (aircraftList.Count == 0)
             {
-                Debug.WriteLine("Closing the Window form because there are no aircraft remaining.");
-
                 // Unsubscribe from the ListChanged event
                 aircraftList.ListChanged -= AircraftList_ListChanged;
 
