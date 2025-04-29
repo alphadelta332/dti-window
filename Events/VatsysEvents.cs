@@ -121,7 +121,7 @@ namespace DTIWindow.Events
                 Delegate? currentDelegate = eventField.GetValue(null) as Delegate;
 
                 // Create a delegate for the OnTracksChanged method
-                var onTracksChangedMethod = typeof(VatsysEvents).GetMethod(nameof(OnTracksChanged));
+                MethodInfo onTracksChangedMethod = typeof(VatsysEvents).GetMethod("OnTracksChanged", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 if (onTracksChangedMethod == null)
                 {
                     return;
