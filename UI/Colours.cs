@@ -22,7 +22,7 @@ namespace DTIWindow.UI
                 Identities.WindowBackground => GetAdjustedColour(vatsys.Colours.Identities.WindowBackground),
                 Identities.ChildLabelBackground => Color.Transparent,
                 Identities.ChildLabelBackgroundClick => GetAdjustedColour(vatsys.Colours.Identities.GenericText),
-                Identities.ChildLabelTextClick => Color.White,
+                Identities.ChildLabelTextClick => GetAdjustedColour(vatsys.Colours.Identities.WindowBackground),
                 Identities.DesignationBox => Color.White,
                 Identities.ChildLabelPassedText => Color.FromArgb(0, 0, 188),
                 Identities.ChildLabelUnpassedText => Color.White,

@@ -56,7 +56,7 @@ namespace DTIWindow.UI
 
             // Initialize the TracksChanged event subscription
             var eventsInstance = new VatsysEvents();
-            eventsInstance.Initialize();
+            eventsInstance.InitialiseTracksChanged();
 
             // Check and set the designated aircraft after populating the display
             CheckAndSetDesignatedAircraft();
@@ -139,28 +139,68 @@ namespace DTIWindow.UI
                         BorderStyle = BorderStyle.None
                     };
 
-                    // Draw the white square and fill it if the aircraft is designated
+                    // Flag to track if the box is being clicked
+                    bool isMouseDown = false;
+
+                    // Draw the white outline and the background as two separate layers
                     boxPanel.Paint += (s, e) =>
                     {
                         e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                        // Draw the background layer (bottom layer)
+                        if (isMouseDown)
+                        {
+                            // Highlight with ChildLabelBackgroundClick color when clicked
+                            using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick)))
+                            {
+                                e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
+                            }
+                        }
+                        else if (aircraft.designatedAircraft != null && aircraft.designatedAircraft.Callsign == aircraft.Callsign)
+                        {
+                            // Fill with white if the aircraft is designated
+                            using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox)))
+                            {
+                                e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
+                            }
+                        }
+                        else
+                        {
+                            // Transparent background otherwise
+                            using (Brush brush = new SolidBrush(Color.Transparent))
+                            {
+                                e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
+                            }
+                        }
+
+                        // Draw the white outline (top layer)
                         using (Pen pen = new Pen(UIColours.GetColour(UIColours.Identities.DesignationBox), 3))
                         {
                             e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
                         }
+                    };
 
-                        if (aircraft.designatedAircraft != null && aircraft.designatedAircraft.Callsign == aircraft.Callsign)
+                    // Add MouseDown event to highlight the square
+                    boxPanel.MouseDown += (sender, e) =>
+                    {
+                        if (e.Button == MouseButtons.Left) // Only handle left mouse clicks
                         {
-                            using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox)))
-                            {
-                                e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
-                            }
+                            isMouseDown = true;
+                            boxPanel.Invalidate(); // Force the panel to repaint
                         }
                     };
 
-                    // Add a MouseClick event handler to the boxPanel
-                    boxPanel.MouseClick += (sender, e) =>
+                    // Add MouseUp event to unhighlight the square and perform the existing action
+                    boxPanel.MouseUp += (sender, e) =>
                     {
-                        mouseEvents.DesignateWithWindow(sender, e, aircraft);
+                        if (e.Button == MouseButtons.Left) // Only handle left mouse clicks
+                        {
+                            isMouseDown = false;
+                            boxPanel.Invalidate(); // Force the panel to repaint
+
+                            // Perform the existing action
+                            mouseEvents.DesignateWithWindow(sender, e, aircraft);
+                        }
                     };
 
                     aircraftPanel.Controls.Add(boxPanel);
