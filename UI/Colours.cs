@@ -26,10 +26,10 @@ namespace DTIWindow.UI
                 Identities.DesignationBox => Color.White,
                 Identities.ChildLabelPassedText => Color.FromArgb(0, 0, 188),
                 Identities.ChildLabelUnpassedText => Color.White,
-                _ => Color.Gray // Default color
+                _ => Color.Gray // Default colour
             };
         }
-        public static (string hmiState, Color color) GetHMIStateAndColor(string hmiState)
+        public static (string hmiState, Color color) GetHMIStateAndColour(string hmiState)
         {
             try
             {
@@ -52,7 +52,7 @@ namespace DTIWindow.UI
                     _ => vatsys.Colours.Identities.Default
                 };
 
-                // Get the color from vatsys.Colours
+                // Get the colour from vatsys.Colours
                 Color color = GetAdjustedColour(identity);
 
                 return (hmiState, color);
@@ -76,7 +76,7 @@ namespace DTIWindow.UI
                 }
             }
 
-            // Fallback to unadjusted color if adjustedColours is not accessible
+            // Fallback to unadjusted colour if adjustedColours is not accessible
             return vatsys.Colours.GetColour(identity);
         }
     }

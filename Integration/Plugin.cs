@@ -30,7 +30,7 @@ namespace DTIWindow.Integration
         // Constructor for the DTIWindow plugin
         public DTIWindow()
         {
-            // Initialize the menu bar button for the plugin
+            // Initialise the menu bar button for the plugin
             _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("Traffic Info"));
             var Events = new VatsysEvents();
             _opener.Item.Click += Events.OpenForm; // Attach event handler to open the form
