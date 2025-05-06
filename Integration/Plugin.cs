@@ -2,11 +2,12 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Net.Http;
-using System.Threading.Tasks;
 using DTIWindow.Events;
 using vatsys;
 using vatsys.Plugin;
 using System.Reflection;
+using System.Text.Json;
+using System.Data.Common;
 
 namespace DTIWindow.Integration
 {
@@ -105,15 +106,23 @@ namespace DTIWindow.Integration
             try
             {
                 // URL to fetch the latest version (e.g., a JSON file hosted on GitHub Pages)
-                string versionUrl = "https://raw.githubusercontent.com/alphadelta332/dti-window/main/version.json";
+                string versionUrl = "https://raw.githubusercontent.com/alphadelta332/dti-window/main/Version.json";
 
                 using (HttpClient client = new HttpClient())
                 {
-                    // Fetch the latest version from the URL
-                    string latestVersionString = await client.GetStringAsync(versionUrl);
+                    // Fetch the JSON content from the URL
+                    string json = await client.GetStringAsync(versionUrl);
 
-                    // Parse the latest version
-                    Version latestVersion = Version.Parse(latestVersionString.Trim());
+                    // Deserialize the JSON into a VersionData object
+                    var latestVersionData = JsonSerializer.Deserialize<VersionData>(json);
+
+                    if (latestVersionData == null)
+                    {
+                        return;
+                    }
+
+                    // Construct the latest version from the JSON data
+                    Version latestVersion = new Version(latestVersionData.Major, latestVersionData.Minor, latestVersionData.Build);
 
                     // Get the current version from AssemblyInfo
                     Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
@@ -123,15 +132,21 @@ namespace DTIWindow.Integration
                     {
                         // Throw an error if the current version is outdated
                         var events = new VatsysEvents();
-                        events.ThrowError("DTIWindowPlugin", $"Your plugin version ({currentVersion}) is outdated. Please update to the latest version ({latestVersion}).");
+                        events.ThrowError("Traffic Info Plugin", $"Your plugin version ({currentVersion}) is outdated. Please update to the latest version ({latestVersion}) via GitHub or Plugin Manager.");
                     }
                 }
             }
-            catch (Exception ex)
+            catch (DbException)
             {
-                // Log any exceptions that occur during the version check
-                Debug.WriteLine($"Exception during version check: {ex.Message}\n{ex.StackTrace}");
             }
         }
+    }
+
+    // Class to represent the JSON structure
+    public class VersionData
+    {
+        public int Major { get; set; }
+        public int Minor { get; set; }
+        public int Build { get; set; }
     }
 }

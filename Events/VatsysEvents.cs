@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using DTIWindow.Integration;
 using DTIWindow.Models;
@@ -214,7 +213,6 @@ namespace DTIWindow.Events
                 Type? errorsType = typeof(MMI).Assembly.GetType("vatsys.Errors");
                 if (errorsType == null)
                 {
-                    Debug.WriteLine("Errors type not found.");
                     return;
                 }
 
@@ -222,24 +220,22 @@ namespace DTIWindow.Events
                 MethodInfo? addMethod = errorsType.GetMethod("Add", BindingFlags.Static | BindingFlags.Public);
                 if (addMethod == null)
                 {
-                    Debug.WriteLine("Errors.Add method not found.");
                     return;
                 }
 
-                // Create a new Exception with the provided source and message
-                Exception pluginError = new Exception(message)
+                // Log the method signature for debugging
+                foreach (var parameter in addMethod.GetParameters())
                 {
-                    Source = source
-                };
+                }
 
-                // Add the error to the Errors collection
-                addMethod.Invoke(null, new object[] { pluginError });
+                // Create a new Exception with the provided message
+                Exception pluginError = new Exception(message);
 
-                Debug.WriteLine("Error successfully added to the ErrorWindow.");
+                // Invoke the Errors.Add method with the correct parameters
+                addMethod.Invoke(null, new object[] { pluginError, source });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Exception while adding error to ErrorWindow: {ex.Message}\n{ex.StackTrace}");
             }
         }
     }
