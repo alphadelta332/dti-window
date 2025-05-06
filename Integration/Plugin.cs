@@ -1,9 +1,12 @@
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Net.Http;
+using System.Threading.Tasks;
 using DTIWindow.Events;
 using vatsys;
 using vatsys.Plugin;
+using System.Reflection;
 
 namespace DTIWindow.Integration
 {
@@ -30,6 +33,9 @@ namespace DTIWindow.Integration
         // Constructor for the DTIWindow plugin
         public DTIWindow()
         {
+            // Perform the version check
+            Task.Run(async () => await CheckForUpdatesAsync());
+
             // Initialise the menu bar button for the plugin
             _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("Traffic Info"));
             var Events = new VatsysEvents();
@@ -91,6 +97,40 @@ namespace DTIWindow.Integration
             using (ProcessModule curModule = curProcess.MainModule)
             {
                 return SetWindowsHookEx(KeyEvents.WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
+            }
+        }
+
+        public async Task CheckForUpdatesAsync()
+        {
+            try
+            {
+                // URL to fetch the latest version (e.g., a JSON file hosted on GitHub Pages)
+                string versionUrl = "https://raw.githubusercontent.com/alphadelta332/dti-window/main/version.json";
+
+                using (HttpClient client = new HttpClient())
+                {
+                    // Fetch the latest version from the URL
+                    string latestVersionString = await client.GetStringAsync(versionUrl);
+
+                    // Parse the latest version
+                    Version latestVersion = Version.Parse(latestVersionString.Trim());
+
+                    // Get the current version from AssemblyInfo
+                    Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
+
+                    // Compare versions
+                    if (currentVersion < latestVersion)
+                    {
+                        // Throw an error if the current version is outdated
+                        var events = new VatsysEvents();
+                        events.ThrowError("DTIWindowPlugin", $"Your plugin version ({currentVersion}) is outdated. Please update to the latest version ({latestVersion}).");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log any exceptions that occur during the version check
+                Debug.WriteLine($"Exception during version check: {ex.Message}\n{ex.StackTrace}");
             }
         }
     }

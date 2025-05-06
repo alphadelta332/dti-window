@@ -206,5 +206,41 @@ namespace DTIWindow.Events
             {
             }
         }
+        public void ThrowError(string source, string message)
+        {
+            try
+            {
+                // Get the Errors type from the vatsys assembly
+                Type? errorsType = typeof(MMI).Assembly.GetType("vatsys.Errors");
+                if (errorsType == null)
+                {
+                    Debug.WriteLine("Errors type not found.");
+                    return;
+                }
+
+                // Get the Add method of the Errors class
+                MethodInfo? addMethod = errorsType.GetMethod("Add", BindingFlags.Static | BindingFlags.Public);
+                if (addMethod == null)
+                {
+                    Debug.WriteLine("Errors.Add method not found.");
+                    return;
+                }
+
+                // Create a new Exception with the provided source and message
+                Exception pluginError = new Exception(message)
+                {
+                    Source = source
+                };
+
+                // Add the error to the Errors collection
+                addMethod.Invoke(null, new object[] { pluginError });
+
+                Debug.WriteLine("Error successfully added to the ErrorWindow.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception while adding error to ErrorWindow: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
     }
 }
