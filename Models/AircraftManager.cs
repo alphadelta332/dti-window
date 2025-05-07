@@ -6,7 +6,7 @@ namespace DTIWindow.Models
     {
         private static AircraftManager? _instance;
         public static AircraftManager Instance => _instance ??= new AircraftManager();
-        public BindingList<Aircraft> aircraftList = new BindingList<Aircraft>(); // Initialize here
+        public BindingList<Aircraft> aircraftList = new BindingList<Aircraft>(); // Initialise here
         public static BindingList<Aircraft> AircraftList => Instance.aircraftList; // Static property
         private static int nextAircraftNumber = 1; // Counter for generating unique aircraft names
 

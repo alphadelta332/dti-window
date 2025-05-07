@@ -15,7 +15,7 @@ namespace DTIWindow.Models
             // Ensure no null values are passed
             Name = name ?? throw new ArgumentNullException(nameof(name), "Aircraft name cannot be null.");
             Callsign = callsign ?? throw new ArgumentNullException(nameof(callsign), "Aircraft callsign cannot be null.");
-            Children = new BindingList<ChildAircraft>(); // Initialize the list of children
+            Children = new BindingList<ChildAircraft>(); // Initialise the list of children
         }
 
         // Adds a child aircraft to the list if it doesn't already exist

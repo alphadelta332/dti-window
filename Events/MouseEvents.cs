@@ -18,7 +18,7 @@ namespace DTIWindow.Events
                 // Highlight the background while the mouse button is held
                 childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick); // Use the window title text color
 
-                // Change the text color to white
+                // Change the text colour to white
                 childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick);
 
                 // Track the active child label
@@ -37,7 +37,7 @@ namespace DTIWindow.Events
                 // Release mouse input
                 childLabel.Capture = false;
 
-                // Reset the background color when the mouse button is released
+                // Reset the background colour when the mouse button is released
                 childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
 
                 try
@@ -65,7 +65,7 @@ namespace DTIWindow.Events
                     }
 
                     // Refresh the existing Window instance
-                    var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
+                    var windowInstance = Application.OpenForms.OfType<Window>().FirstOrDefault();
                     if (windowInstance != null)
                     {
                         windowInstance.PopulateAircraftDisplay();
@@ -139,7 +139,7 @@ namespace DTIWindow.Events
                 }
 
                 // Refresh the UI to reflect the change
-                var windowInstance = Application.OpenForms.OfType<UI.Window>().FirstOrDefault();
+                var windowInstance = Application.OpenForms.OfType<Window>().FirstOrDefault();
                 if (windowInstance != null)
                 {
                     windowInstance.PopulateAircraftDisplay();
@@ -187,7 +187,7 @@ namespace DTIWindow.Events
                                     // Highlight the label background
                                     childLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick);
 
-                                    // Change the text color to white
+                                    // Change the text colour to white
                                     childLabel.ForeColor = UIColours.GetColour(UIColours.Identities.ChildLabelTextClick);
 
                                     // Track the active child label
@@ -215,7 +215,7 @@ namespace DTIWindow.Events
                         // Reset the label background
                         ChildAircraft.activeChildLabel.BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground);
 
-                        // Reset the text color to its original state
+                        // Reset the text colour to its original state
                         var associatedChild = AircraftManager.AircraftList
                             .SelectMany(parent => parent.Children)
                             .FirstOrDefault(c => c.Callsign == ChildAircraft.activeChildLabel.Text);
@@ -288,7 +288,7 @@ namespace DTIWindow.Events
 
                     // Set the designated aircraft for the parent
                     var setDesignatedAircraftMethod = typeof(Aircraft).GetMethod("SetDesignatedAircraft", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                    setDesignatedAircraftMethod?.Invoke(aircraft, new object[] { true });
+                    setDesignatedAircraftMethod?.Invoke(aircraft, [true]);
 
                     // Access the AircraftTracks field
                     var aircraftTracksField = typeof(MMI).GetField("AircraftTracks", BindingFlags.Static | BindingFlags.NonPublic);
@@ -325,6 +325,27 @@ namespace DTIWindow.Events
                 catch (Exception)
                 {
                 }
+            }
+        }
+
+        public void DesignationBox_MouseDown(object? sender, MouseEventArgs e, Aircraft aircraft, ref bool isMouseDown, Panel boxPanel)
+        {
+            if (e.Button == MouseButtons.Left) // Only handle left mouse clicks
+            {
+                isMouseDown = true;
+                boxPanel.Invalidate(); // Force the panel to repaint
+            }
+        }
+
+        public void DesignationBox_MouseUp(object? sender, MouseEventArgs e, Aircraft aircraft, ref bool isMouseDown, Panel boxPanel)
+        {
+            if (e.Button == MouseButtons.Left) // Only handle left mouse clicks
+            {
+                isMouseDown = false;
+                boxPanel.Invalidate(); // Force the panel to repaint
+
+                // Perform the existing action
+                DesignateWithWindow(sender, e, aircraft);
             }
         }
     }

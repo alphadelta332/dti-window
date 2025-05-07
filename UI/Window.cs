@@ -18,8 +18,8 @@ namespace DTIWindow.UI
         // Constructor for the AircraftViewer form
         public Window(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
         {
-            this.aircraftList = aircraftList; // Initialize the aircraft list
-            this.trafficPairings = trafficPairings; // Initialize the traffic pairings dictionary
+            this.aircraftList = aircraftList; // Initialise the aircraft list
+            this.trafficPairings = trafficPairings; // Initialise the traffic pairings dictionary
             try
             {
                 var field = typeof(BaseForm).GetField("middleclickclose", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -54,9 +54,9 @@ namespace DTIWindow.UI
             // Add the panel to the form
             Controls.Add(aircraftPanel);
 
-            // Initialize the TracksChanged event subscription
+            // Initialise the TracksChanged event subscription
             var eventsInstance = new VatsysEvents();
-            eventsInstance.Initialize();
+            eventsInstance.InitialiseTracksChanged();
 
             // Check and set the designated aircraft after populating the display
             CheckAndSetDesignatedAircraft();
@@ -96,7 +96,6 @@ namespace DTIWindow.UI
             PopulateAircraftDisplay();
         }
 
-        // Populates the aircraft display with UI elements
         public void PopulateAircraftDisplay()
         {
             if (InvokeRequired)
@@ -107,100 +106,138 @@ namespace DTIWindow.UI
 
             try
             {
-                aircraftPanel.Controls.Clear(); // Clear all previous UI elements
-                int yOffset = 10; // Y-positioning for UI elements
+                ClearAircraftPanel(); // Step 1: Clear and reset the UI
 
-                var mouseEvents = new MouseEvents(); // Create an instance of MouseEvents
+                int yOffset = 10; // Y-positioning for UI elements
 
                 foreach (var aircraft in aircraftList)
                 {
-                    // Retrieve the HMI state for the aircraft's callsign
-                    string hmiState = States.GetHMIState(aircraft.Callsign);
-
-                    // Retrieve the HMI state and color
-                    var (state, color) = Colours.GetHMIStateAndColor(hmiState);
-
-                    // Create a label for the parent aircraft
-                    Label parentLabel = new Label
-                    {
-                        Text = aircraft.Callsign,
-                        Font = terminusFont,
-                        ForeColor = color,
-                        Location = new Point(30, yOffset),
-                        AutoSize = true
-                    };
-                    aircraftPanel.Controls.Add(parentLabel);
-
-                    // Create a panel to indicate designation status with a white square
-                    Panel boxPanel = new Panel
-                    {
-                        Size = new Size(16, 16),
-                        Location = new Point(parentLabel.Location.X - 20, parentLabel.Location.Y),
-                        BorderStyle = BorderStyle.None
-                    };
-
-                    // Draw the white square and fill it if the aircraft is designated
-                    boxPanel.Paint += (s, e) =>
-                    {
-                        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                        using (Pen pen = new Pen(UIColours.GetColour(UIColours.Identities.DesignationBox), 3))
-                        {
-                            e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
-                        }
-
-                        if (aircraft.designatedAircraft != null && aircraft.designatedAircraft.Callsign == aircraft.Callsign)
-                        {
-                            using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox)))
-                            {
-                                e.Graphics.FillRectangle(brush, new Rectangle(1, 1, boxPanel.Width - 2, boxPanel.Height - 2));
-                            }
-                        }
-                    };
-
-                    // Add a MouseClick event handler to the boxPanel
-                    boxPanel.MouseClick += (sender, e) =>
-                    {
-                        mouseEvents.DesignateWithWindow(sender, e, aircraft);
-                    };
-
-                    aircraftPanel.Controls.Add(boxPanel);
-
-                    yOffset += 25;
-
-                    // Display child aircraft under the parent
-                    foreach (var child in aircraft.Children)
-                    {
-                        Label childLabel = new Label
-                        {
-                            Text = child.Callsign,
-                            Font = terminusFont,
-                            ForeColor = child.Status == "Passed"
-                                ? UIColours.GetColour(UIColours.Identities.ChildLabelPassedText)
-                                : UIColours.GetColour(UIColours.Identities.ChildLabelUnpassedText),
-                            Location = new Point(100, yOffset),
-                            AutoSize = true,
-                            BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground)
-                        };
-
-                        // Set event handlers for mouse actions on child labels
-                        childLabel.MouseDown += (sender, e) =>
-                        {
-                            mouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
-                        };
-                        childLabel.MouseUp += (sender, e) =>
-                        {
-                            mouseEvents.ChildLabel_MouseUp(sender, e, aircraft, child);
-                        };
-
-                        aircraftPanel.Controls.Add(childLabel);
-                        yOffset += 20;
-                    }
-
-                    yOffset += 10;
+                    CreateParentAircraftUI(aircraft, ref yOffset); // Step 2: Create parent aircraft UI
+                    CreateChildAircraftUI(aircraft, ref yOffset);  // Step 3: Create child aircraft UI
+                    yOffset += 10; // Add spacing between parent aircraft
                 }
             }
             catch (Exception)
             {
+            }
+        }
+
+        // Step 1: Clear and reset the UI
+        private void ClearAircraftPanel()
+        {
+            aircraftPanel.Controls.Clear();
+        }
+
+        // Step 2: Create parent aircraft UI
+        private void CreateParentAircraftUI(Aircraft aircraft, ref int yOffset)
+        {
+            // Retrieve the HMI state and colour
+            string hmiState = States.GetHMIState(aircraft.Callsign);
+            var (state, color) = Colours.GetHMIStateAndColour(hmiState);
+
+            // Create a label for the parent aircraft
+            Label parentLabel = new Label
+            {
+                Text = aircraft.Callsign,
+                Font = terminusFont,
+                ForeColor = color,
+                Location = new Point(30, yOffset),
+                AutoSize = true
+            };
+            aircraftPanel.Controls.Add(parentLabel);
+
+            // Create a panel to indicate designation status with a white square
+            Panel boxPanel = CreateDesignationBox(aircraft, parentLabel.Location);
+            aircraftPanel.Controls.Add(boxPanel);
+
+            yOffset += 25; // Adjust Y-offset for the next element
+        }
+
+        // Step 2.1: Create the designation box
+        private Panel CreateDesignationBox(Aircraft aircraft, Point parentLabelLocation)
+        {
+            Panel boxPanel = new Panel
+            {
+                Size = new Size(16, 16),
+                Location = new Point(parentLabelLocation.X - 20, parentLabelLocation.Y),
+                BorderStyle = BorderStyle.None
+            };
+
+            bool isMouseDown = false;
+
+            // Draw the white outline and the background as two separate layers
+            boxPanel.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                // Draw the background layer (bottom layer)
+                if (isMouseDown)
+                {
+                    using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick)))
+                    {
+                        e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
+                    }
+                }
+                else if (aircraft.designatedAircraft != null && aircraft.designatedAircraft.Callsign == aircraft.Callsign)
+                {
+                    using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox)))
+                    {
+                        e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
+                    }
+                }
+                else
+                {
+                    using (Brush brush = new SolidBrush(Color.Transparent))
+                    {
+                        e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
+                    }
+                }
+
+                // Draw the white outline (top layer)
+                using (Pen pen = new Pen(UIColours.GetColour(UIColours.Identities.DesignationBox), 3))
+                {
+                    e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
+                }
+            };
+
+            // Delegate mouse events to MouseEvents
+            var mouseEvents = new MouseEvents();
+            boxPanel.MouseDown += (sender, e) => mouseEvents.DesignationBox_MouseDown(sender, e, aircraft, ref isMouseDown, boxPanel);
+            boxPanel.MouseUp += (sender, e) => mouseEvents.DesignationBox_MouseUp(sender, e, aircraft, ref isMouseDown, boxPanel);
+
+            return boxPanel;
+        }
+
+        // Step 3: Create child aircraft UI
+        private void CreateChildAircraftUI(Aircraft aircraft, ref int yOffset)
+        {
+            foreach (var child in aircraft.Children)
+            {
+                Label childLabel = new Label
+                {
+                    Text = child.Callsign,
+                    Font = terminusFont,
+                    ForeColor = child.Status == "Passed"
+                        ? UIColours.GetColour(UIColours.Identities.ChildLabelPassedText)
+                        : UIColours.GetColour(UIColours.Identities.ChildLabelUnpassedText),
+                    Location = new Point(100, yOffset),
+                    AutoSize = true,
+                    BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground)
+                };
+
+                // Set event handlers for mouse actions on child labels
+                var mouseEvents = new MouseEvents();
+                childLabel.MouseDown += (sender, e) =>
+                {
+                    mouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
+                };
+                childLabel.MouseUp += (sender, e) =>
+                {
+                    mouseEvents.ChildLabel_MouseUp(sender, e, aircraft, child);
+                };
+
+                aircraftPanel.Controls.Add(childLabel);
+                yOffset += 20; // Adjust Y-offset for the next child
             }
         }
 

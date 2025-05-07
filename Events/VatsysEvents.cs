@@ -99,7 +99,7 @@ namespace DTIWindow.Events
             {
             }
         }
-        public void Initialize()
+        public void InitialiseTracksChanged()
         {
             try
             {
@@ -200,6 +200,39 @@ namespace DTIWindow.Events
                     .OfType<Window>()
                     .FirstOrDefault();
                 windowInstance?.PopulateAircraftDisplay();
+            }
+            catch (Exception)
+            {
+            }
+        }
+        public void ThrowError(string source, string message)
+        {
+            try
+            {
+                // Get the Errors type from the vatsys assembly
+                Type? errorsType = typeof(MMI).Assembly.GetType("vatsys.Errors");
+                if (errorsType == null)
+                {
+                    return;
+                }
+
+                // Get the Add method of the Errors class
+                MethodInfo? addMethod = errorsType.GetMethod("Add", BindingFlags.Static | BindingFlags.Public);
+                if (addMethod == null)
+                {
+                    return;
+                }
+
+                // Log the method signature for debugging
+                foreach (var parameter in addMethod.GetParameters())
+                {
+                }
+
+                // Create a new Exception with the provided message
+                Exception pluginError = new Exception(message);
+
+                // Invoke the Errors.Add method with the correct parameters
+                addMethod.Invoke(null, new object[] { pluginError, source });
             }
             catch (Exception)
             {
