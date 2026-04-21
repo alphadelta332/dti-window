@@ -37,9 +37,29 @@ namespace DTIWindow.UI
 
             // Set form properties
             Text = "Traffic Info";
-            Width = 200;
-            Height = 350;
+            Width = 300;
+            Height = 400;
             BackColor = UIColours.GetColour(UIColours.Identities.WindowBackground);
+
+            // Create the menu strip
+            var menuStrip = new MenuStrip
+            {
+                BackColor = Color.FromArgb(160, 170, 170)
+            };
+
+            var menuFont = new Font("Terminus (TTF)", 12F, FontStyle.Bold);
+            var settingsMenu = new ToolStripMenuItem("Settings") { Font = menuFont, ForeColor = Color.FromArgb(0, 0, 96) };
+            var keybindMenuItem = new ToolStripMenuItem("Keybind") { Font = menuFont };
+
+            // Add event handler for the Keybind menu item
+            keybindMenuItem.Click += (sender, e) =>
+            {
+                var settingsForm = new Settings();
+                settingsForm.ShowDialog(); // Open the settings form as a modal dialog
+            };
+
+            settingsMenu.DropDownItems.Add(keybindMenuItem);
+            menuStrip.Items.Add(settingsMenu);
 
             // Create the main panel for displaying aircraft
             aircraftPanel = new DoubleBufferedPanel
@@ -51,8 +71,10 @@ namespace DTIWindow.UI
             // Populate the aircraft list initially
             PopulateAircraftDisplay();
 
-            // Add the panel to the form
+            // Add panel first so docking processes it after the menu strip claims its space
             Controls.Add(aircraftPanel);
+            Controls.Add(menuStrip);
+            MainMenuStrip = menuStrip;
 
             // Initialise the TracksChanged event subscription
             var eventsInstance = new VatsysEvents();

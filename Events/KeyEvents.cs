@@ -1,9 +1,10 @@
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using vatsys;
 
 namespace DTIWindow.Events
 {
-    public class KeyEvents : BaseForm
+    public partial class KeyEvents : BaseForm
     {
         public const int WH_KEYBOARD_LL = 13; // Low-level keyboard hook constant
         public const int WM_KEYDOWN = 0x0100; // Windows message for key down
@@ -17,11 +18,11 @@ namespace DTIWindow.Events
             {
                 int vkCode = Marshal.ReadInt32(lParam); // Get the virtual key code
 
-                if (wParam == (IntPtr)WM_KEYDOWN && vkCode == (int)Keys.F7)
+                if (wParam == (IntPtr)WM_KEYDOWN && vkCode == (int)KeyEventsHelper.GetKeybind())
                 {
                     KeybindPressed = true; // Set KeybindPressed to true
                 }
-                else if (wParam == (IntPtr)WM_KEYUP && vkCode == (int)Keys.F7)
+                else if (wParam == (IntPtr)WM_KEYUP && vkCode == (int)KeyEventsHelper.GetKeybind())
                 {
                     KeybindPressed = false; // Set KeybindPressed to false
                 }
@@ -33,7 +34,7 @@ namespace DTIWindow.Events
         // Event handler for when a key is released
         public new void KeyUp(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.F7)
+            if (e.KeyCode == KeyEventsHelper.GetKeybind())
             {
                 KeybindPressed = false; // Set KeybindPressed to false when F7 is released
 
@@ -45,7 +46,7 @@ namespace DTIWindow.Events
         // Event handler for when a key is pressed
         public new void KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.F7)
+            if (e.KeyCode == KeyEventsHelper.GetKeybind())
             {
                 KeybindPressed = true; // Set KeybindPressed to true when F7 is pressed
 
@@ -67,6 +68,55 @@ namespace DTIWindow.Events
         public static void ResetKeybindPressed()
         {
             KeybindPressed = false;
+        }
+    }
+
+    public static class KeyEventsHelper
+    {
+        private static readonly string _settingsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "vatsys-dti-window",
+            "settings.json"
+        );
+
+        private static Keys currentKeybind = LoadSavedKeybind();
+
+        public static void SetKeybind(Keys key)
+        {
+            currentKeybind = key;
+            SaveKeybind(key);
+        }
+
+        public static Keys GetKeybind() => currentKeybind;
+
+        private static Keys LoadSavedKeybind()
+        {
+            try
+            {
+                if (File.Exists(_settingsPath))
+                {
+                    var data = JsonSerializer.Deserialize<PluginSettings>(File.ReadAllText(_settingsPath));
+                    if (data?.Keybind != null && Enum.TryParse<Keys>(data.Keybind, out var key))
+                        return key;
+                }
+            }
+            catch { }
+            return Keys.F7;
+        }
+
+        private static void SaveKeybind(Keys key)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath));
+                File.WriteAllText(_settingsPath, JsonSerializer.Serialize(new PluginSettings { Keybind = key.ToString() }));
+            }
+            catch { }
+        }
+
+        private class PluginSettings
+        {
+            public string? Keybind { get; set; }
         }
     }
 }
