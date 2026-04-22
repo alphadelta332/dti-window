@@ -44,11 +44,11 @@ namespace DTIWindow.UI
             // Create the menu strip
             var menuStrip = new MenuStrip
             {
-                BackColor = Color.FromArgb(160, 170, 170)
+                BackColor = UIColours.GetColour(UIColours.Identities.MenuStripBackground)
             };
 
             var menuFont = new Font("Terminus (TTF)", 12F, FontStyle.Bold);
-            var settingsMenu = new ToolStripMenuItem("Settings") { Font = menuFont, ForeColor = Color.FromArgb(0, 0, 96) };
+            var settingsMenu = new ToolStripMenuItem("Settings") { Font = menuFont, ForeColor = UIColours.GetColour(UIColours.Identities.WindowBackground) };
             var keybindMenuItem = new ToolStripMenuItem("Keybind") { Font = menuFont };
 
             // Add event handler for the Keybind menu item

@@ -15,6 +15,7 @@ namespace DTIWindow.UI
             DesignationBox,
             KeybindButtonBackground,
             KeybindButtonActive,
+            MenuStripBackground,
         }
 
         public static Color GetColour(Identities identity)
@@ -26,8 +27,9 @@ namespace DTIWindow.UI
                 Identities.ChildLabelBackgroundClick => GetAdjustedColour(vatsys.Colours.Identities.GenericText),
                 Identities.ChildLabelTextClick => GetAdjustedColour(vatsys.Colours.Identities.WindowBackground),
                 Identities.DesignationBox => Color.White,
-                Identities.KeybindButtonBackground => Color.FromArgb(180, 180, 180),
-                Identities.KeybindButtonActive => Color.FromArgb(0, 120, 180),
+                Identities.KeybindButtonBackground => GetAdjustedColour(vatsys.Colours.Identities.WindowBackground),
+                Identities.KeybindButtonActive => GetAdjustedColour(vatsys.Colours.Identities.WindowButtonDepressed),
+                Identities.MenuStripBackground => Color.FromArgb(160, 170, 170),
                 Identities.ChildLabelPassedText => Color.FromArgb(0, 0, 188),
                 Identities.ChildLabelUnpassedText => Color.White,
                 _ => Color.Gray // Default colour

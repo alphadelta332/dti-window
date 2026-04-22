@@ -29,7 +29,7 @@ namespace DTIWindow.UI
 
             keybindLabel = new TextLabel
             {
-                Text = "Designate Keybind",
+                Text = "Create Traffic Pairing",
                 AutoSize = true,
                 Font = new Font("Terminus (TTF)", 16f, FontStyle.Bold, GraphicsUnit.Pixel),
                 ForeColor = SystemColors.ControlDark,
