@@ -40,6 +40,8 @@ namespace DTIWindow.UI
             Width = 300;
             Height = 400;
             BackColor = UIColours.GetColour(UIColours.Identities.WindowBackground);
+            Resizeable = true;
+            Padding = new Padding(0, 0, 0, 16);
 
             // Create the menu strip
             var menuStrip = new MenuStrip
@@ -48,14 +50,14 @@ namespace DTIWindow.UI
             };
 
             var menuFont = new Font("Terminus (TTF)", 12F, FontStyle.Bold);
-            var settingsMenu = new ToolStripMenuItem("Settings") { Font = menuFont, ForeColor = UIColours.GetColour(UIColours.Identities.WindowBackground) };
+            var settingsMenu = new ToolStripMenuItem("Settings") { Font = menuFont, ForeColor = UIColours.GetColour(UIColours.Identities.MenuStripText) };
             var keybindMenuItem = new ToolStripMenuItem("Keybind") { Font = menuFont };
 
             // Add event handler for the Keybind menu item
             keybindMenuItem.Click += (sender, e) =>
             {
                 var settingsForm = new Settings();
-                settingsForm.ShowDialog(); // Open the settings form as a modal dialog
+                settingsForm.Show(this);
             };
 
             settingsMenu.DropDownItems.Add(keybindMenuItem);

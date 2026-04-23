@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Windows.Forms;
 using DTIWindow.Events;
 using vatsys;
 
@@ -15,7 +14,8 @@ namespace DTIWindow.UI
             BackColor = Colours.GetColour(Colours.Identities.WindowBackground);
             Text = "Traffic Info Settings";
             FormBorderStyle = FormBorderStyle.FixedSingle;
-            ClientSize = new Size(320, 60);
+            Resizeable = false;
+            ClientSize = new Size(380, 60);
             StartPosition = FormStartPosition.CenterParent;
             KeyPreview = true;
 
@@ -42,7 +42,7 @@ namespace DTIWindow.UI
             keybindButton = new BevelButton
             {
                 Font = new Font("Terminus (TTF)", 18f, FontStyle.Bold, GraphicsUnit.Pixel),
-                Location = new Point(180, 15),
+                Location = new Point(240, 15),
                 Size = new Size(130, 28),
                 Text = KeyEventsHelper.GetKeybind().ToString()
             };
@@ -61,7 +61,6 @@ namespace DTIWindow.UI
             keybindButton.Pressed = !keybindButton.Pressed;
             if (keybindButton.Pressed)
             {
-                keybindButton.Text = "...";
                 Cursor.Clip = keybindButton.RectangleToScreen(keybindButton.ClientRectangle);
             }
             else
