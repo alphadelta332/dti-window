@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Net.Http;
 using DTIWindow.Events;
+using DTIWindow.UI;
 using vatsys;
 using vatsys.Plugin;
 using System.Reflection;
@@ -60,6 +61,9 @@ namespace DTIWindow.Integration
                         KeyEvents.KeybindPressed = false;
                     };
                 }
+
+                if (mainForm != null)
+                    KeyboardSettingsInjector.HookKeyboardSettingsMenu(mainForm);
             });
 
             StartGlobalHook(); // Start the global keyboard hook
