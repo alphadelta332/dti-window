@@ -51,7 +51,11 @@ namespace DTIWindow.UI
         private static void Inject(Form form)
         {
             var panel = form.Controls.Find("tableLayoutPanel2", false).FirstOrDefault() as TableLayoutPanel;
-            if (panel == null) return;
+            if (panel == null)
+            {
+                Errors.Add(new Exception("Could not inject into KeyboardSettingsWindow — tableLayoutPanel2 not found") { Source = "Traffic Info Plugin" });
+                return;
+            }
 
             var headerLabel = new TextLabel
             {
@@ -102,12 +106,12 @@ namespace DTIWindow.UI
             panel.Controls.Add(keyLabel, 0, rowIndex + 1);
             panel.Controls.Add(toggleButton, 1, rowIndex + 1);
 
-            const int addedHeight = 64;
+            panel.PerformLayout();
             var defaultButton = form.Controls.Find("defaultButton", false).FirstOrDefault();
             if (defaultButton != null)
-                defaultButton.Top += addedHeight;
+                defaultButton.Top = panel.Bottom + 8;
 
-            form.ClientSize = new Size(form.ClientSize.Width, form.ClientSize.Height + addedHeight);
+            form.ClientSize = new Size(form.ClientSize.Width, panel.Bottom + (defaultButton?.Height ?? 32) + 16);
         }
 
         private static void ToggleButton_Click(object sender, EventArgs e)

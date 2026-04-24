@@ -43,25 +43,21 @@ namespace DTIWindow.UI
             Resizeable = true;
             Padding = new Padding(0, 0, 0, 16);
 
-            // Create the menu strip
-            var menuStrip = new MenuStrip
-            {
-                BackColor = UIColours.GetColour(UIColours.Identities.MenuStripBackground)
-            };
-
-            var menuFont = new Font("Terminus (TTF)", 12F, FontStyle.Bold);
-            var settingsMenu = new ToolStripMenuItem("Settings") { Font = menuFont, ForeColor = UIColours.GetColour(UIColours.Identities.MenuStripText) };
-            var keybindMenuItem = new ToolStripMenuItem("Keybind") { Font = menuFont };
-
-            // Add event handler for the Keybind menu item
-            keybindMenuItem.Click += (sender, e) =>
-            {
-                var settingsForm = new Settings();
-                settingsForm.Show(this);
-            };
-
-            settingsMenu.DropDownItems.Add(keybindMenuItem);
-            menuStrip.Items.Add(settingsMenu);
+            // Keybind setting moved to vatsys keyboard settings window (KeyboardSettingsInjector.cs)
+            // var menuStrip = new MenuStrip
+            // {
+            //     BackColor = UIColours.GetColour(UIColours.Identities.MenuStripBackground)
+            // };
+            // var menuFont = new Font("Terminus (TTF)", 12F, FontStyle.Bold);
+            // var settingsMenu = new ToolStripMenuItem("Settings") { Font = menuFont, ForeColor = UIColours.GetColour(UIColours.Identities.MenuStripText) };
+            // var keybindMenuItem = new ToolStripMenuItem("Keybind") { Font = menuFont };
+            // keybindMenuItem.Click += (sender, e) =>
+            // {
+            //     var settingsForm = new Settings();
+            //     settingsForm.Show(this);
+            // };
+            // settingsMenu.DropDownItems.Add(keybindMenuItem);
+            // menuStrip.Items.Add(settingsMenu);
 
             // Create the main panel for displaying aircraft
             aircraftPanel = new DoubleBufferedPanel
@@ -73,10 +69,9 @@ namespace DTIWindow.UI
             // Populate the aircraft list initially
             PopulateAircraftDisplay();
 
-            // Add panel first so docking processes it after the menu strip claims its space
             Controls.Add(aircraftPanel);
-            Controls.Add(menuStrip);
-            MainMenuStrip = menuStrip;
+            // Controls.Add(menuStrip);
+            // MainMenuStrip = menuStrip;
 
             // Initialise the TracksChanged event subscription
             var eventsInstance = new VatsysEvents();
