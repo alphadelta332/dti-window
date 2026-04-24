@@ -55,7 +55,7 @@ namespace DTIWindow.UI
 
             var headerLabel = new TextLabel
             {
-                Text = "Traffic Info Window",
+                Text = "Traffic Info",
                 AutoSize = true,
                 Font = new Font("Terminus (TTF)", 16f, FontStyle.Bold, GraphicsUnit.Pixel),
                 ForeColor = SystemColors.ControlDark,
@@ -68,7 +68,7 @@ namespace DTIWindow.UI
 
             var keyLabel = new TextLabel
             {
-                Text = "Create Traffic Pairing",
+                Text = "Create Pair",
                 AutoSize = true,
                 Font = new Font("Terminus (TTF)", 16f, FontStyle.Bold, GraphicsUnit.Pixel),
                 ForeColor = SystemColors.ControlDark,
@@ -81,7 +81,8 @@ namespace DTIWindow.UI
 
             var toggleButton = new PluginToggleButton
             {
-                Font = new Font("Terminus (TTF)", 18f, FontStyle.Bold, GraphicsUnit.Pixel),
+                Font = MMI.eurofont_winverysml,
+                ForeColor = Colours.GetColour(Colours.Identities.KeybindButtonText),
                 Size = new Size(166, 28),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Text = KeyEventsHelper.GetKeybind().ToString()
