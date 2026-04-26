@@ -3,6 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# Generated at build time from Version.json
+Properties/VersionInfo.g.cs
+
 # dotenv files
 .env
 
