@@ -10,32 +10,22 @@ namespace DTIWindow.UI
 {
     public class Window : BaseForm
     {
-        public Panel aircraftPanel; // UI panel to display the list of aircraft
-        private BindingList<Aircraft> aircraftList; // List of aircraft in the system
-        private Dictionary<Aircraft, List<Aircraft>> trafficPairings; // Stores traffic pairings between aircraft
-        private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular); // Font for UI labels
+        private Panel aircraftPanel;
+        private BindingList<Aircraft> aircraftList;
+        private Font terminusFont = new Font("Terminus (TTF)", 12F, System.Drawing.FontStyle.Regular);
 
-        // Constructor for the AircraftViewer form
-        public Window(BindingList<Aircraft> aircraftList, Dictionary<Aircraft, List<Aircraft>> trafficPairings)
+        public Window(BindingList<Aircraft> aircraftList)
         {
-            this.aircraftList = aircraftList; // Initialise the aircraft list
-            this.trafficPairings = trafficPairings; // Initialise the traffic pairings dictionary
+            this.aircraftList = aircraftList;
             try
             {
                 var field = typeof(BaseForm).GetField("middleclickclose", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (field != null)
-                {
-                    field.SetValue(this, false);
-                }
+                field?.SetValue(this, false);
             }
-            catch (Exception)
-            {
-            }
+            catch (Exception) { }
 
-            // Register an event to refresh the UI when the aircraft list changes
             aircraftList.ListChanged += AircraftList_ListChanged;
 
-            // Set form properties
             Text = "Traffic Info";
             Width = 300;
             Height = 400;
@@ -43,42 +33,15 @@ namespace DTIWindow.UI
             Resizeable = true;
             Padding = new Padding(0, 0, 0, 16);
 
-            // Keybind setting moved to vatsys keyboard settings window (KeyboardSettingsInjector.cs)
-            // var menuStrip = new MenuStrip
-            // {
-            //     BackColor = UIColours.GetColour(UIColours.Identities.MenuStripBackground)
-            // };
-            // var menuFont = new Font("Terminus (TTF)", 12F, FontStyle.Bold);
-            // var settingsMenu = new ToolStripMenuItem("Settings") { Font = menuFont, ForeColor = UIColours.GetColour(UIColours.Identities.MenuStripText) };
-            // var keybindMenuItem = new ToolStripMenuItem("Keybind") { Font = menuFont };
-            // keybindMenuItem.Click += (sender, e) =>
-            // {
-            //     var settingsForm = new Settings();
-            //     settingsForm.Show(this);
-            // };
-            // settingsMenu.DropDownItems.Add(keybindMenuItem);
-            // menuStrip.Items.Add(settingsMenu);
-
-            // Create the main panel for displaying aircraft
             aircraftPanel = new DoubleBufferedPanel
             {
                 Dock = DockStyle.Fill,
                 AutoScroll = true
             };
-
-            // Populate the aircraft list initially
-            PopulateAircraftDisplay();
-
             Controls.Add(aircraftPanel);
-            // Controls.Add(menuStrip);
-            // MainMenuStrip = menuStrip;
 
-            // Initialise the TracksChanged event subscription
-            var eventsInstance = new VatsysEvents();
-            eventsInstance.InitialiseTracksChanged();
-
-            // Check and set the designated aircraft after populating the display
             CheckAndSetDesignatedAircraft();
+            PopulateAircraftDisplay();
         }
 
         protected override CreateParams CreateParams
@@ -86,32 +49,26 @@ namespace DTIWindow.UI
             get
             {
                 var cp = base.CreateParams;
-                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED to enable double buffering
+                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
                 return cp;
             }
         }
 
-        // Event handler to refresh the UI when the aircraft list changes
-        public void AircraftList_ListChanged(object? sender, ListChangedEventArgs e)
+        private void AircraftList_ListChanged(object? sender, ListChangedEventArgs e)
         {
             if (InvokeRequired)
             {
-                // If called from a different thread, invoke the UI update on the main thread
                 Invoke(new MethodInvoker(() => AircraftList_ListChanged(sender, e)));
                 return;
             }
 
-            // Close the window if there are no aircraft remaining
             if (aircraftList.Count == 0)
             {
-                // Unsubscribe from the ListChanged event
                 aircraftList.ListChanged -= AircraftList_ListChanged;
-
                 Close();
                 return;
             }
 
-            // Update the UI directly
             PopulateAircraftDisplay();
         }
 
@@ -128,15 +85,15 @@ namespace DTIWindow.UI
                 aircraftPanel.SuspendLayout();
                 try
                 {
-                    ClearAircraftPanel(); // Step 1: Clear and dispose all existing controls
+                    ClearAircraftPanel();
 
-                    int yOffset = 10; // Y-positioning for UI elements
+                    int yOffset = 10;
 
                     foreach (var aircraft in aircraftList)
                     {
-                        CreateParentAircraftUI(aircraft, ref yOffset); // Step 2: Create parent aircraft UI
-                        CreateChildAircraftUI(aircraft, ref yOffset);  // Step 3: Create child aircraft UI
-                        yOffset += 10; // Add spacing between parent aircraft
+                        CreateParentAircraftUI(aircraft, ref yOffset);
+                        CreateChildAircraftUI(aircraft, ref yOffset);
+                        yOffset += 10;
                     }
                 }
                 finally
@@ -144,14 +101,13 @@ namespace DTIWindow.UI
                     aircraftPanel.ResumeLayout(true);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                ErrorReporter.ThrowError("Traffic Info", ex.Message);
             }
         }
 
-        // Step 1: Clear all controls, disposing each to release their GDI handles.
-        // Controls.Clear() alone only removes from the collection — it does not dispose,
-        // so without this the Win32 window handles leak on every refresh.
+        // Controls.Clear() alone leaks Win32 HWND handles — must Dispose each control first.
         private void ClearAircraftPanel()
         {
             var controls = aircraftPanel.Controls.Cast<Control>().ToList();
@@ -160,14 +116,11 @@ namespace DTIWindow.UI
                 control.Dispose();
         }
 
-        // Step 2: Create parent aircraft UI
         private void CreateParentAircraftUI(Aircraft aircraft, ref int yOffset)
         {
-            // Retrieve the HMI state and colour
             string hmiState = States.GetHMIState(aircraft.Callsign);
             var (state, color) = Colours.GetHMIStateAndColour(hmiState);
 
-            // Create a label for the parent aircraft
             Label parentLabel = new Label
             {
                 Text = aircraft.Callsign,
@@ -178,14 +131,12 @@ namespace DTIWindow.UI
             };
             aircraftPanel.Controls.Add(parentLabel);
 
-            // Create a panel to indicate designation status with a white square
             Panel boxPanel = CreateDesignationBox(aircraft, parentLabel.Location);
             aircraftPanel.Controls.Add(boxPanel);
 
-            yOffset += 25; // Adjust Y-offset for the next element
+            yOffset += 25;
         }
 
-        // Step 2.1: Create the designation box
         private Panel CreateDesignationBox(Aircraft aircraft, Point parentLabelLocation)
         {
             Panel boxPanel = new Panel
@@ -197,50 +148,36 @@ namespace DTIWindow.UI
 
             bool isMouseDown = false;
 
-            // Draw the white outline and the background as two separate layers
             boxPanel.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-                // Draw the background layer (bottom layer)
                 if (isMouseDown)
                 {
                     using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.ChildLabelBackgroundClick)))
-                    {
                         e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
-                    }
                 }
-                else if (aircraft.designatedAircraft != null && aircraft.designatedAircraft.Callsign == aircraft.Callsign)
+                else if (aircraft.IsDesignated)
                 {
                     using (Brush brush = new SolidBrush(UIColours.GetColour(UIColours.Identities.DesignationBox)))
-                    {
                         e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
-                    }
                 }
                 else
                 {
                     using (Brush brush = new SolidBrush(Color.Transparent))
-                    {
                         e.Graphics.FillRectangle(brush, new Rectangle(0, 0, boxPanel.Width, boxPanel.Height));
-                    }
                 }
 
-                // Draw the white outline (top layer)
                 using (Pen pen = new Pen(UIColours.GetColour(UIColours.Identities.DesignationBox), 3))
-                {
                     e.Graphics.DrawRectangle(pen, new Rectangle(0, 0, boxPanel.Width - 1, boxPanel.Height - 1));
-                }
             };
 
-            // Delegate mouse events to MouseEvents
-            var mouseEvents = new MouseEvents();
-            boxPanel.MouseDown += (sender, e) => mouseEvents.DesignationBox_MouseDown(sender, e, aircraft, ref isMouseDown, boxPanel);
-            boxPanel.MouseUp += (sender, e) => mouseEvents.DesignationBox_MouseUp(sender, e, aircraft, ref isMouseDown, boxPanel);
+            boxPanel.MouseDown += (sender, e) => MouseEvents.DesignationBox_MouseDown(sender, e, aircraft, ref isMouseDown, boxPanel);
+            boxPanel.MouseUp += (sender, e) => MouseEvents.DesignationBox_MouseUp(sender, e, aircraft, ref isMouseDown, boxPanel);
 
             return boxPanel;
         }
 
-        // Step 3: Create child aircraft UI
         private void CreateChildAircraftUI(Aircraft aircraft, ref int yOffset)
         {
             foreach (var child in aircraft.Children)
@@ -249,7 +186,7 @@ namespace DTIWindow.UI
                 {
                     Text = child.Callsign,
                     Font = terminusFont,
-                    ForeColor = child.Status == "Passed"
+                    ForeColor = child.Status == PairingStatus.Passed
                         ? UIColours.GetColour(UIColours.Identities.ChildLabelPassedText)
                         : UIColours.GetColour(UIColours.Identities.ChildLabelUnpassedText),
                     Location = new Point(100, yOffset),
@@ -257,51 +194,41 @@ namespace DTIWindow.UI
                     BackColor = UIColours.GetColour(UIColours.Identities.ChildLabelBackground)
                 };
 
-                // Set event handlers for mouse actions on child labels
-                var mouseEvents = new MouseEvents();
-                childLabel.MouseDown += (sender, e) =>
-                {
-                    mouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
-                };
-                childLabel.MouseUp += (sender, e) =>
-                {
-                    mouseEvents.ChildLabel_MouseUp(sender, e, aircraft, child);
-                };
+                childLabel.MouseDown += (sender, e) => MouseEvents.ChildLabel_MouseDown(sender, e, aircraft, child);
+                childLabel.MouseUp += (sender, e) => MouseEvents.ChildLabel_MouseUp(sender, e, aircraft, child);
 
                 aircraftPanel.Controls.Add(childLabel);
-                yOffset += 20; // Adjust Y-offset for the next child
+                yOffset += 20;
             }
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            aircraftList.ListChanged -= AircraftList_ListChanged;
+            base.OnFormClosed(e);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                terminusFont.Dispose();
+            base.Dispose(disposing);
         }
 
         public void CheckAndSetDesignatedAircraft()
         {
-            // Retrieve the designated aircraft callsign from vatSys
-            var designatedAircraftCallsign = Tracks.GetDesignatedTrack()?.GetPilot()?.Callsign;
+            var callsign = MMI.SelectedTrack?.GetPilot()?.Callsign;
+            if (string.IsNullOrEmpty(callsign))
+                return;
 
-            if (string.IsNullOrEmpty(designatedAircraftCallsign))
-            {
-                return; // Exit if no valid designated aircraft is found
-            }
-
-            // Find the aircraft corresponding to the designated callsign
-            var designatedAircraft = AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == designatedAircraftCallsign);
-
+            var designatedAircraft = AircraftManager.AircraftList.FirstOrDefault(a => a.Callsign == callsign);
             if (designatedAircraft == null)
-            {
-                return; // Exit if no matching aircraft is found
-            }
+                return;
 
-            // Clear the designation for all other aircraft
             foreach (var aircraft in AircraftManager.AircraftList)
-            {
-                aircraft.designatedAircraft = null;
-            }
+                aircraft.IsDesignated = false;
 
-            // Set the new designated aircraft
             designatedAircraft.SetDesignatedAircraft(triggeredByDesignateWithWindow: false);
-
-            // Refresh the UI to reflect the new designation
-            PopulateAircraftDisplay();
         }
     }
 
@@ -309,10 +236,7 @@ namespace DTIWindow.UI
     {
         public DoubleBufferedPanel()
         {
-            // Enable double buffering
             DoubleBuffered = true;
-
-            // Reduce flickering by optimizing redraw behavior
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
             UpdateStyles();
         }
