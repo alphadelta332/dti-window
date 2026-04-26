@@ -11,6 +11,8 @@ namespace DTIWindow.Events
     public class MouseEvents : BaseForm
     {
         public static Label? activeChildLabel = null; // Tracks the currently active child label
+        private static bool _keybindHeldAtMouseDown = false;
+        private static Aircraft? _pendingPairingAircraft = null;
         public void ChildLabel_MouseDown(object? sender, MouseEventArgs e, Aircraft parent, ChildAircraft child)
         {
             if (sender is Label childLabel)
@@ -252,6 +254,12 @@ namespace DTIWindow.Events
             {
             }
         }
+        public static void ClearPendingPairing()
+        {
+            _pendingPairingAircraft = null;
+            _keybindHeldAtMouseDown = false;
+        }
+
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
@@ -270,6 +278,8 @@ namespace DTIWindow.Events
                     // Check if the clicked aircraft is already the designated one
                     if (currentSelectedTrack?.GetPilot()?.Callsign == aircraft.Callsign)
                     {
+                        _pendingPairingAircraft = null;
+
                         // Deselect the current track by setting SelectedTrack to null
                         selectedTrackProperty?.SetValue(null, null);
 
@@ -279,11 +289,36 @@ namespace DTIWindow.Events
                         {
                             eventDelegate.Invoke(null, EventArgs.Empty);
                         }
-                        else
-                        {
-                        }
 
                         return; // Exit early since the track was deselected
+                    }
+
+                    // If the keybind was held when the click began, attempt to pair.
+                    // Use _pendingPairingAircraft (set by our previous DTI click) as the reliable
+                    // parent source — currentSelectedTrack may already point to the second aircraft
+                    // if vatSys processed the click via WM_PARENTNOTIFY before MouseUp fired.
+                    // Fall back to currentSelectedTrack for the ASD→DTI case where no DTI pending exists.
+                    if (_keybindHeldAtMouseDown)
+                    {
+                        _keybindHeldAtMouseDown = false;
+
+                        var parentAircraft = _pendingPairingAircraft
+                            ?? (currentSelectedTrack?.GetPilot()?.Callsign is string cs
+                                ? AircraftManager.Instance.GetOrCreateAircraft(cs)
+                                : null);
+
+                        if (parentAircraft != null && parentAircraft.Callsign != aircraft.Callsign)
+                        {
+                            var childAircraft = AircraftManager.Instance.GetOrCreateAircraft(aircraft.Callsign);
+                            var pairings = new Pairings();
+                            pairings.CreateTrafficPairing(parentAircraft, childAircraft);
+                            KeyEvents.ResetKeybindPressed();
+                            _pendingPairingAircraft = null;
+                            return;
+                        }
+
+                        KeyEvents.ResetKeybindPressed();
+                        _pendingPairingAircraft = null;
                     }
 
                     // Set the designated aircraft for the parent
@@ -300,13 +335,10 @@ namespace DTIWindow.Events
                     if (track != null)
                     {
                         // Set the SelectedTrack property
-                        if (selectedTrackProperty != null)
-                        {
-                            selectedTrackProperty.SetValue(null, track);
-                        }
-                        else
-                        {
-                        }
+                        selectedTrackProperty?.SetValue(null, track);
+
+                        // Track this aircraft as the pending parent for a subsequent keybind click
+                        _pendingPairingAircraft = aircraft;
 
                         // Trigger the SelectedTrackChanged event to notify the system
                         var eventField = typeof(MMI).GetField("SelectedTrackChanged", BindingFlags.Static | BindingFlags.NonPublic);
@@ -314,12 +346,6 @@ namespace DTIWindow.Events
                         {
                             eventDelegate.Invoke(null, EventArgs.Empty);
                         }
-                        else
-                        {
-                        }
-                    }
-                    else
-                    {
                     }
                 }
                 catch (Exception)
@@ -333,6 +359,7 @@ namespace DTIWindow.Events
             if (e.Button == MouseButtons.Left) // Only handle left mouse clicks
             {
                 isMouseDown = true;
+                _keybindHeldAtMouseDown = KeyEvents.KeybindPressed;
                 boxPanel.Invalidate(); // Force the panel to repaint
             }
         }

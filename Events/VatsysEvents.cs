@@ -18,7 +18,9 @@ namespace DTIWindow.Events
             {
                 var track = MMI.SelectedTrack; // Get the currently selected track
 
-                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && KeyEvents.KeybindPressed)
+                bool keybindHeld = KeyEvents.KeybindPressed || KeyEventsHelper.IsKeybindPhysicallyHeld();
+
+                if (PreviousSelectedTrack != null && track != PreviousSelectedTrack && track != null && keybindHeld)
                 {
                     MMI.SelectedTrack = PreviousSelectedTrack; // Re-select the previous track
 
@@ -41,6 +43,9 @@ namespace DTIWindow.Events
                     KeyEvents.ResetKeybindPressed(); // Reset KeybindPressed after creating a traffic pairing
                     return;
                 }
+
+                // ASD made a plain selection — any pending DTI pairing state is now stale
+                MouseEvents.ClearPendingPairing();
 
                 // Clear the designation for all aircraft
                 foreach (var aircraft in AircraftManager.AircraftList)

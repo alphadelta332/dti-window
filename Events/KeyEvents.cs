@@ -73,6 +73,14 @@ namespace DTIWindow.Events
 
     public static class KeyEventsHelper
     {
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int vKey);
+
+        // Reads the physical key state directly from hardware — reliable even when
+        // the WH_KEYBOARD_LL hook message hasn't been processed yet (e.g. within WndProc).
+        public static bool IsKeybindPhysicallyHeld() =>
+            (GetAsyncKeyState((int)GetKeybind()) & 0x8000) != 0;
+
         private static readonly string _settingsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "vatsys-dti-window",

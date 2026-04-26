@@ -125,15 +125,23 @@ namespace DTIWindow.UI
 
             try
             {
-                ClearAircraftPanel(); // Step 1: Clear and reset the UI
-
-                int yOffset = 10; // Y-positioning for UI elements
-
-                foreach (var aircraft in aircraftList)
+                aircraftPanel.SuspendLayout();
+                try
                 {
-                    CreateParentAircraftUI(aircraft, ref yOffset); // Step 2: Create parent aircraft UI
-                    CreateChildAircraftUI(aircraft, ref yOffset);  // Step 3: Create child aircraft UI
-                    yOffset += 10; // Add spacing between parent aircraft
+                    ClearAircraftPanel(); // Step 1: Clear and dispose all existing controls
+
+                    int yOffset = 10; // Y-positioning for UI elements
+
+                    foreach (var aircraft in aircraftList)
+                    {
+                        CreateParentAircraftUI(aircraft, ref yOffset); // Step 2: Create parent aircraft UI
+                        CreateChildAircraftUI(aircraft, ref yOffset);  // Step 3: Create child aircraft UI
+                        yOffset += 10; // Add spacing between parent aircraft
+                    }
+                }
+                finally
+                {
+                    aircraftPanel.ResumeLayout(true);
                 }
             }
             catch (Exception)
@@ -141,10 +149,15 @@ namespace DTIWindow.UI
             }
         }
 
-        // Step 1: Clear and reset the UI
+        // Step 1: Clear all controls, disposing each to release their GDI handles.
+        // Controls.Clear() alone only removes from the collection — it does not dispose,
+        // so without this the Win32 window handles leak on every refresh.
         private void ClearAircraftPanel()
         {
+            var controls = aircraftPanel.Controls.Cast<Control>().ToList();
             aircraftPanel.Controls.Clear();
+            foreach (var control in controls)
+                control.Dispose();
         }
 
         // Step 2: Create parent aircraft UI
