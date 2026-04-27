@@ -34,6 +34,7 @@ namespace DTIWindow.Integration
 
         public DTIWindow()
         {
+            CrashLogger.Attach();
             Task.Run(async () => await CheckForUpdatesAsync());
 
             _opener = new(CustomToolStripMenuItemWindowType.Main, CustomToolStripMenuItemCategory.Windows, new ToolStripMenuItem("Traffic Info"));
