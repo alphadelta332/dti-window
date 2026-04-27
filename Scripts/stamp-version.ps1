@@ -13,4 +13,4 @@ using System.Reflection;
 [assembly: AssemblyFileVersion("$version")]
 "@
 
-Set-Content -Path $OutputPath -Value $content -Encoding UTF8NoBOM
+[System.IO.File]::WriteAllText($OutputPath, $content)
