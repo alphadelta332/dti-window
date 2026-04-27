@@ -19,6 +19,10 @@
     <Optimize>False</Optimize>
   </PropertyGroup>
 
+  <Target Name="StampVersion" BeforeTargets="BeforeBuild">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Scripts\stamp-version.ps1&quot; -JsonPath &quot;$(MSBuildProjectDirectory)\Version.json&quot; -OutputPath &quot;$(MSBuildProjectDirectory)\Properties\VersionInfo.g.cs&quot;" />
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="5.0.2" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.3" />

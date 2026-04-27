@@ -11,9 +11,11 @@ vatSys Plugin that creates a window to record passing of Directed Traffic Inform
 Add a traffic pairing when you identify that directed traffic information will need to be passed between two aircraft at some point.
 
 1. `Designate` an aircraft
-2. Hold `F7`
+2. Hold the Traffic Pair key. By default, this is `F7`*
 3. `Designate` another aircraft
 4. This will create a traffic pairing between these two aircraft in the Traffic Info Window.
+
+*The Keybind for creating Traffic Pairs can be modified in the vatSys Keyboard Settings Menu.
 
 <img width="700" alt="vatSys_7oV7ErF06N" src="https://github.com/user-attachments/assets/97ccc46c-c244-436b-a8b7-666c1d413816" />
 
