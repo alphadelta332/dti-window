@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Import local path overrides if present — copy LocalOverrides.props.example to get started -->
+  <Import Project="LocalOverrides.props" Condition="Exists('LocalOverrides.props')" />
+
   <PropertyGroup>
     <TargetFramework>net481</TargetFramework>
     <RootNamespace>dti_window</RootNamespace>
@@ -7,17 +10,40 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-	<OutputPath>C:\vatSys\bin\Plugins\dti-window</OutputPath>
-	<Platforms>AnyCPU</Platforms>
-	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-	<PlatformTarget>x86</PlatformTarget>
-	<LangVersion>13.0</LangVersion>
+    <!-- Default vatSys install path; override in LocalOverrides.props -->
+    <VatSysPath Condition="'$(VatSysPath)' == ''">C:\vatSys</VatSysPath>
+    <OutputPath>$(VatSysPath)\bin\Plugins\dti-window</OutputPath>
+    <Platforms>AnyCPU</Platforms>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>13.0</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>False</Optimize>
   </PropertyGroup>
+
+  <Target Name="GenerateLaunchSettings" BeforeTargets="BeforeBuild"
+          Condition="!Exists('$(MSBuildProjectDirectory)\Properties\launchSettings.json')">
+    <PropertyGroup>
+      <_VatSysPathJson>$(VatSysPath.Replace('\','\\'))</_VatSysPathJson>
+    </PropertyGroup>
+    <ItemGroup>
+      <_LaunchSettingsLine Include="{" />
+      <_LaunchSettingsLine Include="  &quot;profiles&quot;: {" />
+      <_LaunchSettingsLine Include="    &quot;Debug with vatSys&quot;: {" />
+      <_LaunchSettingsLine Include="      &quot;commandName&quot;: &quot;Executable&quot;," />
+      <_LaunchSettingsLine Include="      &quot;executablePath&quot;: &quot;$(_VatSysPathJson)\\bin\\vatSys.exe&quot;," />
+      <_LaunchSettingsLine Include="      &quot;workingDirectory&quot;: &quot;$(_VatSysPathJson)\\bin&quot;" />
+      <_LaunchSettingsLine Include="    }" />
+      <_LaunchSettingsLine Include="  }" />
+      <_LaunchSettingsLine Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\Properties\launchSettings.json"
+                      Lines="@(_LaunchSettingsLine)"
+                      Overwrite="true" />
+  </Target>
 
   <Target Name="StampVersion" BeforeTargets="BeforeBuild">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Scripts\stamp-version.ps1&quot; -JsonPath &quot;$(MSBuildProjectDirectory)\Version.json&quot; -OutputPath &quot;$(MSBuildProjectDirectory)\Properties\VersionInfo.g.cs&quot;" />
@@ -32,7 +58,7 @@
 
   <ItemGroup>
     <Reference Include="vatSys">
-      <HintPath>C:\vatSys\bin\vatSys.exe</HintPath>
+      <HintPath>$(VatSysPath)\bin\vatSys.exe</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

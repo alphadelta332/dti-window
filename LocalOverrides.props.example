@@ -1,0 +1,12 @@
+<!--
+  One-time setup: copy this file to LocalOverrides.props (which is gitignored) and set
+  VatSysPath to your vatSys installation directory.
+
+  This controls where the project looks for vatSys.exe (the reference) and where it
+  outputs the built plugin. launchSettings.json is generated automatically on first build.
+-->
+<Project>
+  <PropertyGroup>
+    <VatSysPath>C:\vatSys</VatSysPath>
+  </PropertyGroup>
+</Project>
