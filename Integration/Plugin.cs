@@ -30,7 +30,7 @@ namespace DTIWindow.Integration
         public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr GetModuleHandle(string lpModuleName);
+        private static extern IntPtr GetModuleHandle(string? lpModuleName);
 
         public DTIWindow()
         {
@@ -54,10 +54,8 @@ namespace DTIWindow.Integration
                     mainForm.KeyUp += keyEvents.KeyUp;
                     mainForm.KeyDown += keyEvents.KeyDown;
                     mainForm.LostFocus += (s, e) => KeyEvents.KeybindPressed = false;
-                }
-
-                if (mainForm != null)
                     KeyboardSettingsInjector.HookKeyboardSettingsMenu(mainForm);
+                }
             });
 
             StartGlobalHook();
@@ -85,8 +83,8 @@ namespace DTIWindow.Integration
         private static IntPtr SetHook(LowLevelKeyboardProc proc)
         {
             using Process curProcess = Process.GetCurrentProcess();
-            using ProcessModule curModule = curProcess.MainModule;
-            return SetWindowsHookEx(KeyEvents.WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
+            var moduleName = curProcess.MainModule?.ModuleName;
+            return SetWindowsHookEx(KeyEvents.WH_KEYBOARD_LL, proc, GetModuleHandle(moduleName), 0);
         }
 
         public async Task CheckForUpdatesAsync()
@@ -106,7 +104,7 @@ namespace DTIWindow.Integration
                 Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
 
                 if (currentVersion < latestVersion)
-                    ErrorReporter.ThrowError("Traffic Info Plugin", $"Your plugin version ({currentVersion}) is outdated. Please update to the latest version ({latestVersion}) via GitHub or Plugin Manager.");
+                    ErrorReporter.ThrowError("Traffic Info Plugin", $"Your plugin version ({currentVersion}) is outdated. Please update to the latest version ({latestVersion}) via GitHub or vatSys Launcher.");
             }
             catch (Exception) { }
         }

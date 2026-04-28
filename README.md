@@ -33,3 +33,43 @@ Clean up the window when traffic information is no longer required between two a
 `Middle click` indented aircraft to remove them from the window. Deleting an aircraft will **not** delete the reciprocal pairing (ie, deleting DEF from ABC **will not** delete ABC from DEF).
 
 <img width="500" alt="vatSys_z05vPUuNtG" src="https://github.com/user-attachments/assets/413c646d-5b63-4aaa-b24e-0ba50b102f84" />
+
+---
+
+## Contributing
+
+### Prerequisites
+- Visual Studio 2022 (or JetBrains Rider)
+- [.NET Framework 4.8.1 Developer Pack](https://dotnet.microsoft.com/en-us/download/dotnet-framework/net481)
+- vatSys installed locally
+
+### First-time setup
+1. Clone the repository
+2. Copy `LocalOverrides.props.example` to `LocalOverrides.props` (gitignored) and set `VatSysPath` to your vatSys installation directory:
+    ```xml
+    <VatSysPath>C:\vatSys</VatSysPath>
+    ```
+3. Build the project — the plugin DLL is output directly to `[VatSysPath]\bin\Plugins\dti-window\`, and `Properties\launchSettings.json` is generated automatically for the debug profile.
+
+That's it. Press **F5** in Visual Studio to launch vatSys with the plugin loaded.
+
+### Project structure
+```
+Events/          — keyboard and mouse input handling, vatSys event hooks
+Integration/     — plugin entry point, crash logging, error reporting
+Models/          — Aircraft, ChildAircraft, Pairings, AircraftManager
+UI/              — main window, colour helpers, keyboard settings injection
+Scripts/         — build-time scripts (version stamping)
+```
+
+### Versioning
+The version is defined in `Version.json` as `Major.Minor.Build`. `Properties/VersionInfo.g.cs` is generated automatically at build time from this file — do not edit it manually. The plugin checks GitHub for a newer version on startup using this same file.
+
+To bump the version for a release, update `Version.json` and commit it alongside your changes.
+
+### Gitignored files
+The following files are local to each contributor and should never be committed:
+| File | Purpose |
+|---|---|
+| `LocalOverrides.props` | Sets `VatSysPath` for your machine |
+| `Properties/launchSettings.json` | VS debug launch profile (auto-generated on first build) |

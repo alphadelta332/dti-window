@@ -6,6 +6,12 @@
 # Generated at build time from Version.json
 Properties/VersionInfo.g.cs
 
+# Local vatSys path overrides — copy LocalOverrides.props.example to set up
+LocalOverrides.props
+
+# Local debug launch profile — copy Properties/launchSettings.json.example to set up
+Properties/launchSettings.json
+
 # dotenv files
 .env
 
