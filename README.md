@@ -32,7 +32,7 @@ Clean up the window when traffic information is no longer required between two a
 
 `Middle click` indented aircraft to remove them from the window. Deleting an aircraft will **not** delete the reciprocal pairing (ie, deleting DEF from ABC **will not** delete ABC from DEF).
 
-<video src="Assets/Delete Traffic Pair.mp4" width="500" controls></video>
+<video src="https://raw.githubusercontent.com/alphadelta332/dti-window/main/Assets/Delete%20Traffic%20Pair.mp4" width="500" controls></video>
 
 ---
 
