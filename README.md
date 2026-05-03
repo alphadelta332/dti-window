@@ -17,15 +17,13 @@ Add a traffic pairing when you identify that directed traffic information will n
 
 *The Keybind for creating Traffic Pairs can be modified in the vatSys Keyboard Settings Menu.
 
-<img width="700" alt="vatSys_7oV7ErF06N" src="https://github.com/user-attachments/assets/97ccc46c-c244-436b-a8b7-666c1d413816" />
+https://github.com/user-attachments/assets/aa6c9e22-3839-4931-ae04-a11f1860b023
 
 ### Record whether the traffic has been passed
 Keep track of what traffic information has been passed, and what is outstanding.
 
 1. `Left click` the indented callsign to change it from **white** to **blue**. This signifies that the traffic has been passed on this aircraft.
 2. `Right click` the indented callsign to change it from **blue** to **white**. This signifies that the traffic has **not yet** been passed on this aircraft.
-
-<img width="700" alt="vatSys_y3omzuJyHW" src="https://github.com/user-attachments/assets/9593e14b-f6e7-4761-b4d4-538b9054affd" />
 
 ### Delete aircraft from the window
 Clean up the window when traffic information is no longer required between two aircraft.
